@@ -19,7 +19,7 @@ double t;//当前时间
 double latest_time;//上一帧时间
 
 bool init_imu=true;
-
+ 
 //估计的位置与姿态
 Eigen::Vector3d tmp_P=Eigen::Vector3d(0, 0, 0); //t
 Eigen::Quaterniond tmp_Q=Eigen::Quaterniond::Identity();//R
