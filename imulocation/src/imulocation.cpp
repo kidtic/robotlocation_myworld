@@ -1,13 +1,12 @@
 #include "ros/ros.h"
 #include "turtlebot3_msgs/SensorState.h"
 #include "sensor_msgs/Imu.h"
-#include "Eigen/Core"
-#include <Eigen/Geometry>
 #include <std_msgs/String.h>
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/tf.h>
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>
@@ -57,35 +56,39 @@ void chatterCallback(const sensor_msgs::ImuConstPtr imu_msg)
   double rz = imu_msg->angular_velocity.z;
   Eigen::Vector3d angular_velocity{rx, ry, rz};
   
-  Eigen::Vector3d un_acc_0 = tmp_Q * acc_0 ;
-
+  //计算当前时刻的姿态
   Eigen::Vector3d un_gyr = 0.5 * (gyr_0 + angular_velocity);
   Eigen::Quaterniond quaternion3;
     quaternion3 = Eigen::AngleAxisd((un_gyr * dt)[0], Eigen::Vector3d::UnitX()) * 
                   Eigen::AngleAxisd((un_gyr * dt)[1], Eigen::Vector3d::UnitY()) * 
                   Eigen::AngleAxisd((un_gyr * dt)[2], Eigen::Vector3d::UnitZ());
-
   tmp_Q = tmp_Q * quaternion3;
 
-  Eigen::Vector3d un_acc_1 = tmp_Q * linear_acceleration ;
+  Eigen::Vector3d un_acc = linear_acceleration;
 
-  Eigen::Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);
-
-  tmp_P = tmp_P + dt * tmp_V + 0.5 * dt * dt * un_acc;
   tmp_V = tmp_V + dt * un_acc;
 
-  acc_0 = linear_acceleration;
+  Eigen::Vector3d world_velocity=tmp_Q*tmp_V;
+  tmp_P=tmp_P+world_velocity*dt;
+
   gyr_0 = angular_velocity;
-  ROS_INFO("pos:[%f,%f,%f]",tmp_P[0],tmp_P[1],tmp_P[2]);
+
+  printf("tmp_Q:[%f,%f,%f,%f]\n",tmp_Q.x(),tmp_Q.y(),tmp_Q.z(),tmp_Q.w());
+  printf("tmp_V:[%f,%f,%f]\n",tmp_V[0],tmp_V[1],tmp_V[2]);
+  printf("world_velocity:[%f,%f,%f]\n",world_velocity[0],world_velocity[1],world_velocity[2]);
+  printf("tmp_P:[%f,%f,%f]\n",tmp_P[0],tmp_P[1],tmp_P[2]);
+  printf("------/n");
+  //printf("pos:[%f,%f,%f]\n",tmp_P[0],tmp_P[1],tmp_P[2]);
+
 
 }
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "imulocation");
+  ros::init(argc, argv, "imu_data");
   ros::NodeHandle nh;
 
-  ros::Subscriber sub = nh.subscribe("imu", 1000, chatterCallback);
+  ros::Subscriber sub = nh.subscribe("/zbot/imu_data", 1000, chatterCallback);
 
   ros::spin();
 
