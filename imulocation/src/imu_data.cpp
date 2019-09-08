@@ -61,7 +61,7 @@ void chatterCallback(const nav_msgs::OdometryConstPtr msg)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "imulocation");
+  ros::init(argc, argv, "imu_data");
   ros::NodeHandle nh;
 
   ros::Subscriber sub = nh.subscribe("odom", 1000, chatterCallback);

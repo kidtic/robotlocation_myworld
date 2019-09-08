@@ -6,6 +6,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
+#include "nav_msgs/Odometry.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,6 +15,7 @@
 #include <unistd.h>
 
 
+ros::Publisher zbotOdom;
 
 double t;//当前时间
 double latest_time;//上一帧时间
@@ -64,31 +66,42 @@ void chatterCallback(const sensor_msgs::ImuConstPtr imu_msg)
                   Eigen::AngleAxisd((un_gyr * dt)[2], Eigen::Vector3d::UnitZ());
   tmp_Q = tmp_Q * quaternion3;
 
-  Eigen::Vector3d un_acc = linear_acceleration;
+  
+  Eigen::Vector3d un_acc = tmp_Q*((linear_acceleration+acc_0)*0.5);
 
+  tmp_P=tmp_P+tmp_V*dt+0.5*dt*dt*un_acc;
   tmp_V = tmp_V + dt * un_acc;
 
-  Eigen::Vector3d world_velocity=tmp_Q*tmp_V;
-  tmp_P=tmp_P+world_velocity*dt;
-
   gyr_0 = angular_velocity;
-
-  printf("tmp_Q:[%f,%f,%f,%f]\n",tmp_Q.x(),tmp_Q.y(),tmp_Q.z(),tmp_Q.w());
-  printf("tmp_V:[%f,%f,%f]\n",tmp_V[0],tmp_V[1],tmp_V[2]);
-  printf("world_velocity:[%f,%f,%f]\n",world_velocity[0],world_velocity[1],world_velocity[2]);
-  printf("tmp_P:[%f,%f,%f]\n",tmp_P[0],tmp_P[1],tmp_P[2]);
+  acc_0 = linear_acceleration;
+  //printf("tmp_Q:[%f,%f,%f,%f]\n",tmp_Q.x(),tmp_Q.y(),tmp_Q.z(),tmp_Q.w());
+  //printf("tmp_V:[%f,%f,%f]\n",tmp_V[0],tmp_V[1],tmp_V[2]);
+  ROS_INFO("tmp_P:[%f,%f,%f]\n",tmp_P[0],tmp_P[1],tmp_P[2]);
   printf("------/n");
   //printf("pos:[%f,%f,%f]\n",tmp_P[0],tmp_P[1],tmp_P[2]);
+  //发布IMU里程计
+  nav_msgs::Odometry odom;
+  odom.header=imu_msg->header;
+  odom.child_frame_id="base_footprint";
+  odom.pose.pose.position.x=tmp_P[0];
+  odom.pose.pose.position.y=tmp_P[1];
+  odom.pose.pose.position.z=tmp_P[2];
+  odom.pose.pose.orientation.x=tmp_Q.x();
+  odom.pose.pose.orientation.y=tmp_Q.y();
+  odom.pose.pose.orientation.z=tmp_Q.z();
+  odom.pose.pose.orientation.w=tmp_Q.w();
 
+  zbotOdom.publish(odom);
 
 }
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "imu_data");
+  ros::init(argc, argv, "imulocation");
   ros::NodeHandle nh;
 
   ros::Subscriber sub = nh.subscribe("/zbot/imu_data", 1000, chatterCallback);
+  zbotOdom=nh.advertise<nav_msgs::Odometry>("zbot/imu_odom",1000);
 
   ros::spin();
 
