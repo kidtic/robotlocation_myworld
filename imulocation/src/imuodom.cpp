@@ -1,18 +1,4 @@
-#include "ros/ros.h"
-#include "turtlebot3_msgs/SensorState.h"
-#include "sensor_msgs/Imu.h"
-#include <std_msgs/String.h>
-#include <geometry_msgs/Quaternion.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/Geometry>
-#include "nav_msgs/Odometry.h"
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/time.h>
-#include <signal.h>
-#include <unistd.h>
+#include <imuodom.h>
 
 
 ros::Publisher zbotOdom;
@@ -27,11 +13,6 @@ Eigen::Vector3d tmp_P=Eigen::Vector3d(0, 0, 0); //t
 Eigen::Quaterniond tmp_Q=Eigen::Quaterniond::Identity();//R
 Eigen::Vector3d tmp_V=Eigen::Vector3d(0, 0, 0);
 
-//前一帧的局部坐标系的加速度
-Eigen::Vector3d acc_0=Eigen::Vector3d(0, 0, 0);
-//前一帧的角速度
-Eigen::Vector3d gyr_0=Eigen::Vector3d(0, 0, 0);
-//重力加速度
 
 
 void chatterCallback(const sensor_msgs::ImuConstPtr imu_msg)
@@ -59,26 +40,16 @@ void chatterCallback(const sensor_msgs::ImuConstPtr imu_msg)
   Eigen::Vector3d angular_velocity{rx, ry, rz};
   
   //计算当前时刻的姿态
-  Eigen::Vector3d un_gyr = 0.5 * (gyr_0 + angular_velocity);
+  Eigen::Vector3d un_gyr =  angular_velocity;
   Eigen::Quaterniond quaternion3;
     quaternion3 = Eigen::AngleAxisd((un_gyr * dt)[0], Eigen::Vector3d::UnitX()) * 
                   Eigen::AngleAxisd((un_gyr * dt)[1], Eigen::Vector3d::UnitY()) * 
                   Eigen::AngleAxisd((un_gyr * dt)[2], Eigen::Vector3d::UnitZ());
   tmp_Q = tmp_Q * quaternion3;
-
-  
-  Eigen::Vector3d un_acc = tmp_Q*((linear_acceleration+acc_0)*0.5);
-
+  Eigen::Vector3d un_acc = tmp_Q*((linear_acceleration));
   tmp_P=tmp_P+tmp_V*dt+0.5*dt*dt*un_acc;
   tmp_V = tmp_V + dt * un_acc;
 
-  gyr_0 = angular_velocity;
-  acc_0 = linear_acceleration;
-  //printf("tmp_Q:[%f,%f,%f,%f]\n",tmp_Q.x(),tmp_Q.y(),tmp_Q.z(),tmp_Q.w());
-  //printf("tmp_V:[%f,%f,%f]\n",tmp_V[0],tmp_V[1],tmp_V[2]);
-  ROS_INFO("tmp_P:[%f,%f,%f]\n",tmp_P[0],tmp_P[1],tmp_P[2]);
-  printf("------/n");
-  //printf("pos:[%f,%f,%f]\n",tmp_P[0],tmp_P[1],tmp_P[2]);
   //发布IMU里程计
   nav_msgs::Odometry odom;
   odom.header=imu_msg->header;
@@ -100,10 +71,66 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "imulocation");
   ros::NodeHandle nh;
 
-  ros::Subscriber sub = nh.subscribe("/zbot/imu_data", 1000, chatterCallback);
-  zbotOdom=nh.advertise<nav_msgs::Odometry>("zbot/imu_odom",1000);
+  //ros::Subscriber sub = nh.subscribe("/zbot/imu_data", 1000, chatterCallback);
+  //zbotOdom=nh.advertise<nav_msgs::Odometry>("zbot/imu_odom",1000);
+  //ros::spin();
+  Imuodom imuod;
+  printf("size:%d\n",imuod.imu_size());
 
-  ros::spin();
+
 
   return 0;
+}
+
+
+
+//IMUodom class
+ 
+void Imuodom::imu_init(int maxQueueNum)
+{
+  for (size_t i = 0; i < maxQueueNum; i++)
+  {
+    /* code */
+    sensor_msgs::Imu input;
+    imudata.push_back(input);
+    printf("%d\n",imudata.size());
+    if(imudata.size()==maxQueueNum)
+    {
+      break;
+    }
+    else if(imudata.size()>maxQueueNum)
+    {
+      printf("error:imu_init datasize is too big\n");
+      break;
+    }
+  }
+  
+}
+
+sensor_msgs::Imu Imuodom::imu_data(int index)
+{
+
+  return imudata[index];
+}
+
+sensor_msgs::Imu Imuodom::imu_data_new(int index)
+{
+  return imudata[imudata.size()-index-1];
+}
+
+void Imuodom::imu_push(sensor_msgs::Imu input)
+{
+  imudata.push_back(input);
+  std::vector<sensor_msgs::Imu>::iterator e=imudata.begin();
+  imudata.erase(e);
+}
+int Imuodom::imu_size()
+{
+  return imudata.size();
+}
+
+
+Imuodom::Imuodom(/* args */)
+{
+  imu_init(20);
 }

@@ -19,4 +19,7 @@
   
   <node pkg="imulocation" type="imu_data" name="imu_data" />
   <node pkg="imulocation" type="imulocation" name="imulocation" />
+
+  <param name="model" value="$(arg model)"/>
+  <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key" name="turtlebot3_teleop_keyboard"  output="screen" />
 </launch>

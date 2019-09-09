@@ -119,12 +119,14 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
   "/usr/include/eigen3/"
+  "include/"
+
 )
 
-add_executable(imulocation src/imulocation.cpp)
+add_executable(imulocation src/imuodom.cpp)
 target_link_libraries(imulocation ${catkin_LIBRARIES})
 add_dependencies(imulocation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
