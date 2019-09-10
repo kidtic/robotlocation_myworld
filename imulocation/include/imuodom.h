@@ -44,7 +44,7 @@ public://func
     /*
     * 说明：操作imudata，押入一个最新的数据，并且丢弃最末尾的数据
     * 参数：input：输入的IMU数据
-    * 
+    * ok
     */
     void imu_push(sensor_msgs::Imu input);
     /*
@@ -55,6 +55,7 @@ public://func
     void imu_init(int maxQueueNum);
     /*
     * 说明：清除所有队列，值全部清0
+    * ok
     */ 
     void imu_clear();
 
@@ -62,6 +63,7 @@ public://func
     * 说明：从最新如入队的顺序来引索
     * 参数：index：引索
     * 返回：IMU数据
+    * ok
     */
     sensor_msgs::Imu imu_data_new(int index);
 
@@ -69,6 +71,7 @@ public://func
     * 说明：从最后进队的顺序来引索
     * 参数：index：引索
     * 返回：IMU数据
+    * ok
     */
     sensor_msgs::Imu imu_data(int index);
 
@@ -77,6 +80,16 @@ public://func
     * ok
     */
     int imu_size();
+
+    /*
+    * 说明：提供IMU运动模型的计算方法,IMU运动方程
+    * 参数：last_pqv:上一个时刻的，机器人的状态
+    *      imuinput:这一时刻的IMU数据
+    *      dt:时间间隔
+    * 返回:下一时刻的机器人状态
+    * ok
+    */
+    PQV_type  imu_motion_function(PQV_type last_pqv,sensor_msgs::Imu imuinput,double dt);
     //
 };
 
