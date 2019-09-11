@@ -4,6 +4,9 @@ project(imulocation)
 ## Compile as C++11, supported in ROS Kinetic and newer
  add_compile_options(-std=c++11)
 
+# 添加cmake模块以使用g2o
+list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules )
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -15,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   turtlebot3_msgs
 )
+find_package( G2O REQUIRED )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -123,11 +127,11 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   "/usr/include/eigen3/"
   "include/"
-
+  ${G2O_INCLUDE_DIRS}
 )
 
 add_executable(imulocation src/imuodom.cpp)
-target_link_libraries(imulocation ${catkin_LIBRARIES})
+target_link_libraries(imulocation ${catkin_LIBRARIES} g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension)
 add_dependencies(imulocation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(imu_data src/imu_data.cpp)

@@ -11,7 +11,7 @@ bool init_imu=true;
 //估计的位置与姿态
 Imuodom::PQV_type last_pqv;
 //
-Imuodom imuod;
+Imuodom imuod(35);
 
 
 
@@ -57,18 +57,18 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "imulocation");
   ros::NodeHandle nh;
 
-  ros::Subscriber sub = nh.subscribe("/zbot/imu_data", 1000, chatterCallback);
-  zbotOdom=nh.advertise<nav_msgs::Odometry>("zbot/imu_odom",1000);
-  ros::spin();
+  //ros::Subscriber sub = nh.subscribe("/zbot/imu_data", 1000, chatterCallback);
+  //zbotOdom=nh.advertise<nav_msgs::Odometry>("zbot/imu_odom",1000);
+  //ros::spin();
+  printf("pqv_size:%ld\n",imuod.robotPQV.size());
   
-
 
   return 0;
 }
 
 
 
-//IMUodom class
+//----------------------IMUodom class-------------------
  
 void Imuodom::imu_init(int maxQueueNum)
 {
@@ -77,6 +77,7 @@ void Imuodom::imu_init(int maxQueueNum)
     /* code */
     sensor_msgs::Imu input;
     imudata.push_back(input);
+    imudata_dt.push_back(0);
     //printf("%d\n",imudata.size());
     if(imudata.size()==maxQueueNum)
     {
@@ -88,6 +89,8 @@ void Imuodom::imu_init(int maxQueueNum)
       break;
     }
   }
+  if(imudata_dt.size()!=imudata.size())
+    printf("error: imudata_dt.size()!=imudata.size()");
   
 }
 
@@ -104,9 +107,18 @@ sensor_msgs::Imu Imuodom::imu_data_new(int index)
 
 void Imuodom::imu_push(sensor_msgs::Imu input)
 {
+  //采样间隔
+  double t=input.header.stamp.toSec()-imudata.back().header.stamp.toSec();
+  //容错
+  if (t>0.5) t=0;
+  //push
   imudata.push_back(input);
   std::vector<sensor_msgs::Imu>::iterator e=imudata.begin();
   imudata.erase(e);
+  imudata_dt.push_back(t);
+  std::vector<double>::iterator et=imudata_dt.begin();
+  imudata_dt.erase(et);
+
 }
 int Imuodom::imu_size()
 {
@@ -114,9 +126,10 @@ int Imuodom::imu_size()
 }
 
 
-Imuodom::Imuodom(/* args */)
+Imuodom::Imuodom(int maxQueueNum)
 {
-  imu_init(20);
+  imu_init(maxQueueNum);
+  robotPQV_init(maxQueueNum+1);
 }
 
 void Imuodom::imu_clear()
@@ -164,4 +177,60 @@ Imuodom::PQV_type  Imuodom::imu_motion_function(PQV_type last_pqv,sensor_msgs::I
   ret.tmp_V = last_pqv.tmp_V + dt * un_acc;
 
   return ret;
+}
+
+
+void Imuodom::robotPQV_init(int maxQueueNum)
+{
+  for (size_t i = 0; i < maxQueueNum; i++)
+  {
+    /* code */
+    PQV_type input;
+    input.tmp_P=Eigen::Vector3d(0, 0, 0); //t
+    input.tmp_Q=Eigen::Quaterniond::Identity();//R
+    input.tmp_V=Eigen::Vector3d(0, 0, 0);
+    robotPQV.push_back(input);
+    //printf("%d\n",robotPQV.size());
+    if(robotPQV.size()==maxQueueNum)
+    {
+      break;
+    }
+    else if(robotPQV.size()>maxQueueNum)
+    {
+      printf("error:robotPQV_init datasize is too big\n");
+      break;
+    }
+  }
+}
+
+void Imuodom::robotPQV_push(PQV_type input)
+{
+  robotPQV.push_back(input);
+  std::vector<Imuodom::PQV_type>::iterator e=robotPQV.begin();
+  robotPQV.erase(e);
+}
+
+g2o::SE3Quat Imuodom::PQV_to_SE3(PQV_type input)
+{
+  return g2o::SE3Quat(input.tmp_Q,input.tmp_P);
+}
+
+Imuodom::PQV_type Imuodom::SE3_to_PQV(g2o::SE3Quat input,Eigen::Vector3d tmp_V)
+{
+  PQV_type ret;
+  ret.tmp_P=input.translation();
+  ret.tmp_Q=input.rotation();
+  ret.tmp_V=tmp_V;
+  return ret;
+
+}
+
+void Imuodom::updata_robotPQV_fromIMU()
+{
+  for (size_t i = 0; i < imudata.size(); i++)
+  {
+    /* code */
+    robotPQV[i+1]=imu_motion_function(robotPQV[i],imudata[i],imudata_dt[i]);
+  }
+  
 }

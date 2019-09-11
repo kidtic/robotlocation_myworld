@@ -3,8 +3,18 @@
 #include "nav_msgs/Odometry.h"
 #include "eigen3/Eigen/Core"
 #include "eigen3/Eigen/Geometry"
+#include <random>
 
 ros::Publisher pub;
+
+//config noise
+const double mean=0.001;
+const double stddev=0.01;
+const double ang_mean=0.0;
+const double ang_stddev=0.0;
+std::default_random_engine generator;
+std::normal_distribution<double> dist(mean,stddev);
+std::normal_distribution<double> ang_dist(ang_mean,ang_stddev);
 
 //方便运算定义一个叉积
 geometry_msgs::Vector3 cross(geometry_msgs::Vector3 a,geometry_msgs::Vector3 b);
@@ -22,7 +32,7 @@ void chatterCallback(const nav_msgs::OdometryConstPtr msg)
   sensor_msgs::Imu imu_data;
   imu_data.header=msg->header;
   imu_data.orientation=msg->pose.pose.orientation;
-  imu_data.angular_velocity=msg->twist.twist.angular;
+  
 
   //-------计算加速度
   double dx = msg->twist.twist.angular.x;
@@ -45,10 +55,15 @@ void chatterCallback(const nav_msgs::OdometryConstPtr msg)
   //公式
   linear_acceleration=(linear_velocity-drpyQ*linear_velocity_last)/dt;
 
-  
-  imu_data.linear_acceleration.x=linear_acceleration[0];
-  imu_data.linear_acceleration.y=linear_acceleration[1];
-  imu_data.linear_acceleration.z=linear_acceleration[2];
+  //加噪声
+  imu_data.linear_acceleration.x=linear_acceleration[0]+dist(generator);
+  imu_data.linear_acceleration.y=linear_acceleration[1]+dist(generator);
+  imu_data.linear_acceleration.z=linear_acceleration[2]+dist(generator);
+  imu_data.angular_velocity.x=msg->twist.twist.angular.x+ang_dist(generator);
+  imu_data.angular_velocity.y=msg->twist.twist.angular.y+ang_dist(generator);
+  imu_data.angular_velocity.z=msg->twist.twist.angular.z+ang_dist(generator);
+
+
 
   pub.publish(imu_data);
   //继承
