@@ -1,0 +1,51 @@
+%YAML:1.0
+
+camNum: 4
+
+# 相机0的内外参数
+camera0.fx: 517.3
+camera0.fy: 516.5
+camera0.cx: 325.1
+camera0.cy: 249.7
+camera0.x: -4.0
+camera0.y: -4.0
+camera0.z: 4.0
+camera0.roll: 0
+camera0.pitch: 0.62
+camera0.yaw: 0.785
+
+#相机1的参数
+camera1.fx: 517.3
+camera1.fy: 516.5
+camera1.cx: 325.1
+camera1.cy: 249.7
+camera1.x: 4.0
+camera1.y: 4.0
+camera1.z: 4.0
+camera1.roll: 0
+camera1.pitch: 0.62
+camera1.yaw: 3.93
+
+#相机2的参数
+camera2.fx: 517.3
+camera2.fy: 516.5
+camera2.cx: 325.1
+camera2.cy: 249.7
+camera2.x: -4.0
+camera2.y: 4.0
+camera2.z: 4.0
+camera2.roll: 0
+camera2.pitch: 0.62
+camera2.yaw: 5.498
+
+#相机3的参数
+camera3.fx: 517.3
+camera3.fy: 516.5
+camera3.cx: 325.1
+camera3.cy: 249.7
+camera3.x: 4.0
+camera3.y: -4.0
+camera3.z: 4.0
+camera3.roll: 0
+camera3.pitch: 0.62
+camera3.yaw: 2.35

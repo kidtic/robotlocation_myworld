@@ -1,3 +1,10 @@
+/*
+* imuodom.h
+* imu里程计：用于存储一段时间内的imu数据缓存，并且提供IMU里程计算的支持与缓存
+* 
+*/
+
+
 #include "ros/ros.h"
 #include "turtlebot3_msgs/SensorState.h"
 #include "sensor_msgs/Imu.h"
@@ -23,7 +30,7 @@ class Imuodom
 private://data
     //最近3s内的缓存的IMU的数据队列，可以查看最近的任意时刻的IMU数据
     std::vector<sensor_msgs::Imu> imudata;
-    std::vector<double> imudata_dt;//时间间隔对应这每一个dt
+    
     /* data */
 public://data
     //订阅的imu数据
@@ -36,8 +43,8 @@ public://data
         Eigen::Vector3d tmp_V;
     };
     std::vector<PQV_type> robotPQV;
-
-
+    //debug
+    std::vector<double> imudata_dt;//时间间隔对应这每一个dt
 
 public://func
     Imuodom(int maxQueueNum);
@@ -111,6 +118,7 @@ public://func
     /*
     * 说明：SE3与PQV_type的转换，由于SE3与PQV_type差了一个速度，所
     *      以得补一个速度
+    * ok
     */ 
     g2o::SE3Quat PQV_to_SE3(PQV_type input);
     PQV_type SE3_to_PQV(g2o::SE3Quat input,Eigen::Vector3d tmp_V);
@@ -132,7 +140,11 @@ public://func
     /*
     * 说明：用在g2o优化上的一个函数，可以根据最旧的那个位姿以及IMU数据往前
     *      迭代n次，得到一个比较新的位姿。其中最旧的那个位姿会作为优化变量
-    * 
+    * 参数：n：迭代多少次
+    *      se3：最开始的那个位姿
+    *      V0：最开始机器人的速度
+    * 返回：根据IMU数据迭代n次后的结果。
+    * ok
     */ 
     g2o::SE3Quat FB(int n ,g2o::SE3Quat se3,Eigen::Vector3d V0);
 };

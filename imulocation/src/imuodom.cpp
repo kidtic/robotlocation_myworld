@@ -60,7 +60,36 @@ int main(int argc, char **argv)
   //ros::Subscriber sub = nh.subscribe("/zbot/imu_data", 1000, chatterCallback);
   //zbotOdom=nh.advertise<nav_msgs::Odometry>("zbot/imu_odom",1000);
   //ros::spin();
-  printf("pqv_size:%ld\n",imuod.robotPQV.size());
+  sensor_msgs::Imu testimu;
+  testimu.linear_acceleration.y=0.5;
+  testimu.angular_velocity.z=0.6;
+  for (size_t i = 0; i < 40; i++)
+  {
+    /* code */
+    imuod.imu_push(testimu);
+  }
+
+  for (size_t i = 0; i < imuod.imu_size(); i++)
+  {
+    /* code */
+    imuod.imudata_dt[i]=1.0/120.0;
+  }
+
+
+  imuod.updata_robotPQV_fromIMU();
+
+  for (size_t i = 0; i < imuod.robotPQV.size(); i++)
+  {
+    /* code */
+    std::cout<<"pose"<<i<<"\n"<<imuod.robotPQV[i].tmp_P<<"\n"<<std::endl;
+  }
+
+  g2o::SE3Quat outpose = imuod.FB(30,imuod.PQV_to_SE3(imuod.robotPQV[0]),imuod.robotPQV[0].tmp_V);
+  std::cout<<"outpose:\n"<<outpose.translation()<<std::endl;
+
+  
+  
+  
   
 
   return 0;
@@ -232,5 +261,28 @@ void Imuodom::updata_robotPQV_fromIMU()
     /* code */
     robotPQV[i+1]=imu_motion_function(robotPQV[i],imudata[i],imudata_dt[i]);
   }
+  
+}
+
+void Imuodom::updata_robotPQV_fromIMU(sensor_msgs::Imu input)
+{
+  PQV_type pose;
+  double dddt=input.header.stamp.toSec()-imudata.back().header.stamp.toSec();
+  pose=imu_motion_function(robotPQV.back(),input,dddt);
+  robotPQV_push(pose);
+  imu_push(input);
+  
+}
+
+g2o::SE3Quat Imuodom::FB(int n ,g2o::SE3Quat se3,Eigen::Vector3d V0)
+{
+  PQV_type pose0=SE3_to_PQV(se3,V0);
+  for (size_t i = 0; i < n; i++)
+  {
+    /* code */
+    pose0=imu_motion_function(pose0,imudata[i],imudata_dt[i]);
+  }
+  g2o::SE3Quat ret=PQV_to_SE3(pose0);
+  return ret;
   
 }

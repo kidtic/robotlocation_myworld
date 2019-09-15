@@ -1,0 +1,30 @@
+<launch>
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="x_pos" default="0.0"/>
+  <arg name="y_pos" default="0.0"/>
+  <arg name="z_pos" default="0.0"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find cameralocation)/worlds/empty.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
+
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf" args="-urdf -model turtlebot3_$(arg model) -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -param robot_description" />
+
+  
+  
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_sdf" args="-sdf -model camera -x -4.0 -y -4.0 -z 4.0 -R 0 -P 0.62 -Y 0.785401 -file $(find cameralocation)/model/camera/model.sdf" />
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_sdf1" args="-sdf -model camera1 -x 4.0 -y 4.0 -z 4.0 -R 0 -P 0.62 -Y 3.93 -file $(find cameralocation)/model/camera/model.sdf" />
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_sdf2" args="-sdf -model camera2 -x -4.0 -y 4.0 -z 4.0 -R 0 -P 0.62 -Y 5.498 -file $(find cameralocation)/model/camera/model.sdf" />
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_sdf3" args="-sdf -model camera3 -x 4.0 -y -4.0 -z 4.0 -R 0 -P 0.62 -Y 2.35 -file $(find cameralocation)/model/camera/model.sdf" />
+
+
+  <param name="model" value="$(arg model)"/>
+  <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key" name="turtlebot3_teleop_keyboard"  output="screen" />
+</launch>

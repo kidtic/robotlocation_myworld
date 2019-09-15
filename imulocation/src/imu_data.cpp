@@ -1,3 +1,9 @@
+/*
+* imu_data.cpp
+* imu传感器节点，仿真imu传感器的值
+* 
+*/
+
 #include "ros/ros.h"
 #include "sensor_msgs/Imu.h"
 #include "nav_msgs/Odometry.h"
