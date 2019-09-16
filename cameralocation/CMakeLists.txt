@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 2.8.3)
 project(cameralocation)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+ add_compile_options(-std=c++11)
+
+# 添加cmake模块以使用g2o
+list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules )
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -16,6 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
   turtlebot3_msgs
 )
 
+find_package( G2O REQUIRED )
+find_package( OpenCV REQUIRED )
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -123,11 +128,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   "/usr/include/eigen3/"
   "include/"
+  ${G2O_INCLUDE_DIRS}
+  ${OpenCV_DIRS}
 )
 
 add_executable(cameralocation src/camera_node.cpp)
 add_library(cameradata src/cameradata.cpp)
-target_link_libraries(cameralocation ${catkin_LIBRARIES} cameradata)
+target_link_libraries(cameralocation ${catkin_LIBRARIES} cameradata g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${OpenCV_LIBS})
 add_dependencies(cameralocation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ library

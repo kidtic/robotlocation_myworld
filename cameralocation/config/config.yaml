@@ -10,9 +10,9 @@ camera0.cy: 249.7
 camera0.x: -4.0
 camera0.y: -4.0
 camera0.z: 4.0
-camera0.roll: 0
-camera0.pitch: 0.62
-camera0.yaw: 0.785
+camera0.roll: -0.78539815
+camera0.pitch: 0.0
+camera0.yaw: -2.186276
 
 #相机1的参数
 camera1.fx: 517.3
@@ -22,9 +22,9 @@ camera1.cy: 249.7
 camera1.x: 4.0
 camera1.y: 4.0
 camera1.z: 4.0
-camera1.roll: 0
-camera1.pitch: 0.62
-camera1.yaw: 3.93
+camera1.roll: 2.3561945
+camera1.pitch: 0.0
+camera1.yaw: -2.186276
 
 #相机2的参数
 camera2.fx: 517.3
@@ -34,9 +34,9 @@ camera2.cy: 249.7
 camera2.x: -4.0
 camera2.y: 4.0
 camera2.z: 4.0
-camera2.roll: 0
-camera2.pitch: 0.62
-camera2.yaw: 5.498
+camera2.roll: 3.92699
+camera2.pitch: 0.0
+camera2.yaw: -2.186276
 
 #相机3的参数
 camera3.fx: 517.3
@@ -46,6 +46,6 @@ camera3.cy: 249.7
 camera3.x: 4.0
 camera3.y: -4.0
 camera3.z: 4.0
-camera3.roll: 0
-camera3.pitch: 0.62
-camera3.yaw: 2.35
+camera3.roll: 0.78539815
+camera3.pitch: 0.0
+camera3.yaw: -2.186276

@@ -7,15 +7,38 @@
 
 #include <cameralocation/cameradata.h>
 #include <ros/ros.h>
+#include <nav_msgs/Odometry.h>
+#include <opencv2/opencv.hpp>
+
+using namespace cv;
+
+camera cam;
+
+void chatterCallback(const nav_msgs::OdometryConstPtr msg);
+
 
 int main(int argc, char **argv)
 {
-  camera cam(4,4,4,0,0.62,3.93,517,516,325,249);
+  cam=camera(-4.0, -4.0, 4.0,
+  -0.78539815, 0.0 ,-2.186276,
+  517.3,516.5,325.1,249.7);
 
   ros::init(argc, argv, "camera_node");
   ros::NodeHandle nh;
 
-  //ros::Subscriber sub = nh.subscribe("/zbot/imu_data", 1000, chatterCallback);
+  //std::cout<<cam.world2pix(Eigen::Vector3d(0,0,0))<<std::endl;
+
+  ros::Subscriber sub = nh.subscribe("odom", 1000, chatterCallback);
   //zbotOdom=nh.advertise<nav_msgs::Odometry>("zbot/imu_odom",1000);
-  //ros::spin();
+  ros::spin();
+  
+
+}
+
+void chatterCallback(const nav_msgs::OdometryConstPtr msg)
+{
+  Eigen::Vector3d pos=Eigen::Vector3d(msg->pose.pose.position.x,msg->pose.pose.position.y,msg->pose.pose.position.z);
+  Eigen::Vector2d pix=cam.world2pix(pos);
+  std::cout<<pix<<"\n"<<std::endl;
+  
 }

@@ -19,7 +19,7 @@
 
   
   
-  <node pkg="gazebo_ros" type="spawn_model" name="spawn_sdf" args="-sdf -model camera -x -4.0 -y -4.0 -z 4.0 -R 0 -P 0.62 -Y 0.785401 -file $(find cameralocation)/model/camera/model.sdf" />
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_sdf" args="-sdf -model camera -x -4.0 -y -4.0 -z 4.0 -R 0 -P 0.62 -Y 0.785 -file $(find cameralocation)/model/camera/model.sdf" />
   <node pkg="gazebo_ros" type="spawn_model" name="spawn_sdf1" args="-sdf -model camera1 -x 4.0 -y 4.0 -z 4.0 -R 0 -P 0.62 -Y 3.93 -file $(find cameralocation)/model/camera/model.sdf" />
   <node pkg="gazebo_ros" type="spawn_model" name="spawn_sdf2" args="-sdf -model camera2 -x -4.0 -y 4.0 -z 4.0 -R 0 -P 0.62 -Y 5.498 -file $(find cameralocation)/model/camera/model.sdf" />
   <node pkg="gazebo_ros" type="spawn_model" name="spawn_sdf3" args="-sdf -model camera3 -x 4.0 -y -4.0 -z 4.0 -R 0 -P 0.62 -Y 2.35 -file $(find cameralocation)/model/camera/model.sdf" />
