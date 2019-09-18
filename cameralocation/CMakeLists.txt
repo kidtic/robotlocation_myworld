@@ -141,10 +141,16 @@ include_directories(
 )
 
 
-add_executable(cameralocation src/camera_node.cpp)
+add_executable(camera_node src/camera_node.cpp)
 add_library(cameradata src/cameradata.cpp)
-target_link_libraries(cameralocation ${catkin_LIBRARIES} cameradata g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${OpenCV_LIBS} ${YAML_CPP_LIBRARIES})
-add_dependencies(cameralocation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(camera_node ${catkin_LIBRARIES} cameradata g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${OpenCV_LIBS} ${YAML_CPP_LIBRARIES})
+add_dependencies(camera_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(imu_node src/imu_node.cpp)
+add_library(imuodom src/imuodom.cpp)
+target_link_libraries(imu_node ${catkin_LIBRARIES} imuodom g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${OpenCV_LIBS})
+add_dependencies(imu_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

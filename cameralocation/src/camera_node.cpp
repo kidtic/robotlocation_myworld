@@ -14,6 +14,9 @@
 
 
 using namespace cv;
+using namespace std;
+
+
 
 camera cam[CAMERA_NUM];
 ros::Publisher pub;
@@ -24,14 +27,37 @@ void chatterCallback(const nav_msgs::OdometryConstPtr msg);
 int main(int argc, char **argv)
 {
   
-  //cam=camera("/home/kk/myproject/ros-projrct/catkin_ws_robotLocation/src/robotlocation_myworld/cameralocation/config/config.yaml","camera1");
+  
   ros::init(argc, argv, "camera_node");
   ros::NodeHandle nh;
+
+  //input print
+  cout<<"argc:"<<argc<<endl;
+  for (size_t i = 0; i < argc; i++)
+  {
+    cout<<argv[i]<<endl;
+  }
+
   //初始化相机
-  cam[0]=camera("src/robotlocation_myworld/cameralocation/config/config.yaml","camera0",nh);
-  cam[1]=camera("src/robotlocation_myworld/cameralocation/config/config.yaml","camera1",nh);
-  cam[2]=camera("src/robotlocation_myworld/cameralocation/config/config.yaml","camera2",nh);
-  cam[3]=camera("src/robotlocation_myworld/cameralocation/config/config.yaml","camera3",nh);
+  if(argc==2)//如果有参数
+  {
+    string configdir=argv[1];
+    cam[0]=camera(configdir,"camera0",nh);
+    cam[1]=camera(configdir,"camera1",nh);
+    cam[2]=camera(configdir,"camera2",nh);
+    cam[3]=camera(configdir,"camera3",nh);
+  }
+  else
+  {
+    string configdir="/home/kk/myproject/ros-projrct/catkin_ws_robotLocation/src/robotlocation_myworld/cameralocation/config/config.yaml";
+    
+    cam[0]=camera(configdir,"camera0",nh);
+    cam[1]=camera(configdir,"camera1",nh);
+    cam[2]=camera(configdir,"camera2",nh);
+    cam[3]=camera(configdir,"camera3",nh);
+  }
+  
+  
 
   ros::Subscriber sub = nh.subscribe("odom", 1000, chatterCallback);
   
