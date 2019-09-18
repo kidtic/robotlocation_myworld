@@ -17,10 +17,14 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   turtlebot3_msgs
+  message_generation
 )
 
 find_package( G2O REQUIRED )
 find_package( OpenCV REQUIRED )
+
+find_package(yaml-cpp REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -60,6 +64,7 @@ find_package( OpenCV REQUIRED )
 #   Message1.msg
 #   Message2.msg
 # )
+add_message_files(FILES cameraKeyPoint.msg)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -76,10 +81,12 @@ find_package( OpenCV REQUIRED )
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs#   nav_msgs#   std_msgs#   turtlebot3_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   geometry_msgs#   nav_msgs#   
+   std_msgs#   turtlebot3_msgs
+ )
+
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -113,8 +120,9 @@ find_package( OpenCV REQUIRED )
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES cameralocation
-#  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp sensor_msgs std_msgs turtlebot3_msgs
+#  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp sensor_msgs std_msgs turtlebot3_msgs message_generation
 #  DEPENDS system_lib
+
 )
 
 ###########
@@ -132,9 +140,10 @@ include_directories(
   ${OpenCV_DIRS}
 )
 
+
 add_executable(cameralocation src/camera_node.cpp)
 add_library(cameradata src/cameradata.cpp)
-target_link_libraries(cameralocation ${catkin_LIBRARIES} cameradata g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${OpenCV_LIBS})
+target_link_libraries(cameralocation ${catkin_LIBRARIES} cameradata g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${OpenCV_LIBS} ${YAML_CPP_LIBRARIES})
 add_dependencies(cameralocation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ library

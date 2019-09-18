@@ -10,26 +10,31 @@
 #include <nav_msgs/Odometry.h>
 #include <opencv2/opencv.hpp>
 
+#define CAMERA_NUM 4
+
+
 using namespace cv;
 
-camera cam;
+camera cam[CAMERA_NUM];
+ros::Publisher pub;
 
 void chatterCallback(const nav_msgs::OdometryConstPtr msg);
 
 
 int main(int argc, char **argv)
 {
-  cam=camera(-4.0, -4.0, 4.0,
-  -0.78539815, 0.0 ,-2.186276,
-  517.3,516.5,325.1,249.7);
-
+  
+  //cam=camera("/home/kk/myproject/ros-projrct/catkin_ws_robotLocation/src/robotlocation_myworld/cameralocation/config/config.yaml","camera1");
   ros::init(argc, argv, "camera_node");
   ros::NodeHandle nh;
-
-  //std::cout<<cam.world2pix(Eigen::Vector3d(0,0,0))<<std::endl;
+  //初始化相机
+  cam[0]=camera("src/robotlocation_myworld/cameralocation/config/config.yaml","camera0",nh);
+  cam[1]=camera("src/robotlocation_myworld/cameralocation/config/config.yaml","camera1",nh);
+  cam[2]=camera("src/robotlocation_myworld/cameralocation/config/config.yaml","camera2",nh);
+  cam[3]=camera("src/robotlocation_myworld/cameralocation/config/config.yaml","camera3",nh);
 
   ros::Subscriber sub = nh.subscribe("odom", 1000, chatterCallback);
-  //zbotOdom=nh.advertise<nav_msgs::Odometry>("zbot/imu_odom",1000);
+  
   ros::spin();
   
 
@@ -37,8 +42,47 @@ int main(int argc, char **argv)
 
 void chatterCallback(const nav_msgs::OdometryConstPtr msg)
 {
-  Eigen::Vector3d pos=Eigen::Vector3d(msg->pose.pose.position.x,msg->pose.pose.position.y,msg->pose.pose.position.z);
-  Eigen::Vector2d pix=cam.world2pix(pos);
-  std::cout<<pix<<"\n"<<std::endl;
+  static double last_time=msg->header.stamp.toSec();
+  static int reaptCont=0;//重复计数
+
+  if(reaptCont>=2)//每2次Callback采集一次
+  {
+    reaptCont=0;
+    //计算间隔时间
+    double dt=msg->header.stamp.toSec()-last_time;
+    //std::cout<<"dt:"<<dt<<std::endl;
+
+
+    Eigen::Vector3d pos=Eigen::Vector3d(msg->pose.pose.position.x,msg->pose.pose.position.y,msg->pose.pose.position.z);
+    Eigen::Quaterniond tmp_Q=Eigen::Quaterniond(msg->pose.pose.orientation.w,msg->pose.pose.orientation.x,
+                                                msg->pose.pose.orientation.y,msg->pose.pose.orientation.z);
+    g2o::SE3Quat pos_quat(tmp_Q,pos);
+    
+    Eigen::Matrix<double,2,3> pix;
+    for (size_t i = 0; i < CAMERA_NUM; i++)
+    {
+      /* code */
+      pix=cam[i].robot2pix(pos_quat);
+      cameralocation::cameraKeyPoint robotImgmsg;
+      robotImgmsg.header=msg->header;
+      robotImgmsg.org[0]=(int32_t)pix(0,0);
+      robotImgmsg.org[1]=(int32_t)pix(1,0);
+      robotImgmsg.xaxis[0]=(int32_t)pix(0,1);
+      robotImgmsg.xaxis[1]=(int32_t)pix(1,1);
+      robotImgmsg.yaxis[0]=(int32_t)pix(0,2);
+      robotImgmsg.yaxis[1]=(int32_t)pix(1,2);
+
+      cam[i].pub.publish(robotImgmsg);
+    }
+
+    //刷新时间
+    last_time=msg->header.stamp.toSec();
+  }
+  else
+  {
+    
+    reaptCont++;
+  }
   
+
 }

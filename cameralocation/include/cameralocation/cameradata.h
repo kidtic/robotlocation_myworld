@@ -7,8 +7,26 @@
 #include <Eigen/Geometry>
 #include "iostream"
 #include <g2o/types/sba/types_six_dof_expmap.h>
+#include <string.h>
+#include <ros/ros.h>
 
+#include <cameralocation/cameraKeyPoint.h>
 
+struct cameraInfo_type
+{
+    double x;
+    double y;
+    double z;
+
+    double roll ;
+    double pitch ;
+    double yaw ;
+
+    double fx;
+    double fy;
+    double cx;
+    double cy;  
+};
 
 class camera
 {
@@ -18,11 +36,10 @@ private:
     Eigen::Matrix4d Tran;
 
 public://data
+    ros::Publisher pub;
 
 public://func
-    camera(double x,double y,double z,
-    double roll ,double pitch ,double yaw ,
-    double fx,double fy,double cx,double cy);
+    camera(std::string path,std::string cameraName,ros::NodeHandle nh);
     camera();
     //世界坐标转换像素坐标
     Eigen::Vector2d world2pix(Eigen::Vector3d pos);
@@ -33,5 +50,6 @@ public://func
     Eigen::Matrix<double,2,3> robot2pix(g2o::SE3Quat input);
 
 };
+
 
 
