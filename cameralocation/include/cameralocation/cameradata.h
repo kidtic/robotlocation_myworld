@@ -17,15 +17,20 @@
 class camera
 {
 private:
+    
+
+public://data
     /* data */
     Eigen::Matrix3d Mi;
     Eigen::Matrix4d Tran;
-
-public://data
-    ros::Publisher pub;
+    //为了简化计算的一些data
+    Eigen::Vector3d t;//平移矩阵
+    Eigen::Matrix3d R;//旋转矩阵
+    Eigen::Matrix3d RM;//可以与Pc组成K向量
+    Eigen::Vector3d RT;//B向量
 
 public://func
-    camera(std::string path,std::string cameraName,ros::NodeHandle nh);
+    camera(std::string path,std::string cameraName);
     camera();
     //世界坐标转换像素坐标
     Eigen::Vector2d world2pix(Eigen::Vector3d pos);

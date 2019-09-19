@@ -153,7 +153,7 @@ add_dependencies(imu_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_
 
 add_executable(location_node src/location_node.cpp)
 add_library(location src/location.cpp)
-target_link_libraries(location_node ${catkin_LIBRARIES} location imuodom cameradata g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${OpenCV_LIBS})
+target_link_libraries(location_node ${catkin_LIBRARIES} location imuodom cameradata g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${OpenCV_LIBS} ${YAML_CPP_LIBRARIES})
 add_dependencies(location_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ library

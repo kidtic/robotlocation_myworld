@@ -1,7 +1,7 @@
 #include <cameralocation/cameradata.h>
 
 
-camera::camera(std::string path,std::string cameraName,ros::NodeHandle nh)
+camera::camera(std::string path,std::string cameraName)
 {
    
     
@@ -32,8 +32,13 @@ camera::camera(std::string path,std::string cameraName,ros::NodeHandle nh)
     Tran<<rotation_matrix3.transpose(),-rotation_matrix3.transpose()*pos,0,0,0,1;
     
     std::cout<<"初始化成功：T=\n"<<Tran<<std::endl;
-    //初始化topic
-    pub=nh.advertise<cameralocation::cameraKeyPoint>("zbot/"+cameraName,1000);
+
+    //计算优化数据
+    R=rotation_matrix3.transpose();
+    t=-rotation_matrix3.transpose()*pos;
+    RM=R.inverse()*Mi.inverse();
+    RT=R.inverse()*t;
+    
 }
 camera::camera(){}
 

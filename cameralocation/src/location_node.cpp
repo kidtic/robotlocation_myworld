@@ -1,33 +1,41 @@
 #include <ros/ros.h>
 #include <cameralocation/location.h>
 
+using namespace std;
+
 #define CAMERA_NUM 4
 
 //回调函数
 void imuCallback(const sensor_msgs::ImuConstPtr msg);
-void cameraCallback0(const cameralocation::cameraKeyPointConstPtr msg);
-void cameraCallback1(const cameralocation::cameraKeyPointConstPtr msg);
-void cameraCallback2(const cameralocation::cameraKeyPointConstPtr msg);
-void cameraCallback3(const cameralocation::cameraKeyPointConstPtr msg);
+void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg);
+
 
 //定位器
 Location location;
 //消息订阅
 ros::Subscriber imuSub;//订阅了机器人的imu信息
-ros::Subscriber cameraSub[CAMERA_NUM];//订阅了相机的消息，相机数量未知。
+ros::Subscriber cameraSub;//订阅了相机的消息，
 
 int main(int argc, char **argv)
 {
   
     ros::init(argc, argv, "location_node");
     ros::NodeHandle nh;
-    location=Location(2);
+    //初始化
+    if (argc==2)
+    {
+        location=Location(2,CAMERA_NUM,argv[1]);
+    }
+    else
+    {
+        location=Location(2,CAMERA_NUM,"src/robotlocation_myworld/cameralocation/config/config.yaml");
+    }
+    
+    
+    
     //订阅消息
     imuSub=nh.subscribe("/zbot/imu_data",1000,imuCallback);
-    cameraSub[0]=nh.subscribe("/zbot/camera0",1000,cameraCallback0);
-    cameraSub[1]=nh.subscribe("/zbot/camera1",1000,cameraCallback1);
-    cameraSub[2]=nh.subscribe("/zbot/camera2",1000,cameraCallback2);
-    cameraSub[3]=nh.subscribe("/zbot/camera3",1000,cameraCallback3);
+    cameraSub=nh.subscribe("/zbot/camera",1000,cameraCallback);
 
     ros::spin();
     return 0;
@@ -45,22 +53,18 @@ void imuCallback(const sensor_msgs::ImuConstPtr msg)
     imuinput.orientation=msg->orientation;
 
     location.imuodom.imu_push(imuinput);
-    printf("ok\n");
+    //printf("ok\n");
 
 }
-void cameraCallback0(const cameralocation::cameraKeyPointConstPtr msg)
+void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
 {
-
-}
-void cameraCallback1(const cameralocation::cameraKeyPointConstPtr msg)
-{
-
-}
-void cameraCallback2(const cameralocation::cameraKeyPointConstPtr msg)
-{
-
-}
-void cameraCallback3(const cameralocation::cameraKeyPointConstPtr msg)
-{
-
+    //test 多相机融合定位
+    std::vector<Eigen::Vector2d> botPc;
+    for (size_t i = 0; i < CAMERA_NUM; i++)
+    {
+        botPc.push_back(Eigen::Vector2d(msg->org[2*i],msg->org[1+2*i]));
+    }
+    Eigen::Vector3d robotP=location.MultiCameraLocation(botPc);
+    cout<<"robot pose :\n"<<robotP<<endl;
+    
 }
