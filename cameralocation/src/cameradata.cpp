@@ -67,9 +67,10 @@ Eigen::Matrix<double,2,3> camera::robot2pix(g2o::SE3Quat input)
 {
     Eigen::Matrix<double,2,3> ret;
     Eigen::Vector2d z[3];
-    z[0]=world2pix(input*g2o::Vector3(0,0,0));
-    z[1]=world2pix(input*g2o::Vector3(0.1,0,0));
-    z[2]=world2pix(input*g2o::Vector3(0,0.1,0));
+    
+    z[0]=world2pix(input*g2o::Vector3D(0,0,0));
+    z[1]=world2pix(input*g2o::Vector3D(0.1,0,0));
+    z[2]=world2pix(input*g2o::Vector3D(0,0.1,0));
     ret<<z[0],z[1],z[2];
     return ret;
 }

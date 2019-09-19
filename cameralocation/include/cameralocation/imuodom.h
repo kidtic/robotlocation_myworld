@@ -47,6 +47,7 @@ public://data
     std::vector<double> imudata_dt;//时间间隔对应这每一个dt
 
 public://func
+    Imuodom();
     Imuodom(int maxQueueNum);
     ~Imuodom();
 
@@ -149,7 +150,9 @@ public://func
     g2o::SE3Quat FB(int n ,g2o::SE3Quat se3,Eigen::Vector3d V0);
 };
 
-
+Imuodom::Imuodom()
+{
+}
 Imuodom::~Imuodom()
 {
 }

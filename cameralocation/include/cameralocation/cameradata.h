@@ -12,21 +12,7 @@
 
 #include <cameralocation/cameraKeyPoint.h>
 
-struct cameraInfo_type
-{
-    double x;
-    double y;
-    double z;
 
-    double roll ;
-    double pitch ;
-    double yaw ;
-
-    double fx;
-    double fy;
-    double cx;
-    double cy;  
-};
 
 class camera
 {

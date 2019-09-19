@@ -42,6 +42,7 @@ int main(int argc, char **argv)
   if(argc==2)//如果有参数
   {
     string configdir=argv[1];
+    
     cam[0]=camera(configdir,"camera0",nh);
     cam[1]=camera(configdir,"camera1",nh);
     cam[2]=camera(configdir,"camera2",nh);
