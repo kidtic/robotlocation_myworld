@@ -13,6 +13,7 @@ camera0.z: 4.0
 camera0.roll: -0.78539815
 camera0.pitch: 0.0
 camera0.yaw: -2.186276
+camera0.delay: 0.5 #相机的延时时间，单位s
 
 #相机1的参数
 camera1.fx: 1551.9
@@ -25,6 +26,7 @@ camera1.z: 4.0
 camera1.roll: 2.3561945
 camera1.pitch: 0.0
 camera1.yaw: -2.186276
+camera1.delay: 1.0
 
 #相机2的参数
 camera2.fx: 1551.9
@@ -37,6 +39,7 @@ camera2.z: 4.0
 camera2.roll: 3.92699
 camera2.pitch: 0.0
 camera2.yaw: -2.186276
+camera2.delay: 0.8
 
 #相机3的参数
 camera3.fx: 1551.9
@@ -49,3 +52,4 @@ camera3.z: 4.0
 camera3.roll: 0.78539815
 camera3.pitch: 0.0
 camera3.yaw: -2.186276
+camera3.delay: 1.3

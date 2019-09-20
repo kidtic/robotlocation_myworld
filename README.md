@@ -3,3 +3,6 @@
 2. 可以选择更改传感器参数与机器人参数在turtlebot3/turtlebot3_description中
 3. `git clone`这个包
 4. `catkin_make`
+
+# 记录
+相机刷新率40Hz，IMU刷新率120Hz

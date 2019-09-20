@@ -68,6 +68,8 @@ int main(int argc, char **argv)
 
 }
 
+
+//相机刷新率40 imu刷新率120；
 void chatterCallback(const nav_msgs::OdometryConstPtr msg)
 {
   static double last_time=msg->header.stamp.toSec();

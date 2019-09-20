@@ -17,6 +17,7 @@ camera::camera(std::string path,std::string cameraName)
     double fy=config[cameraName+".fy"].as<double>();
     double cx=config[cameraName+".cx"].as<double>();
     double cy=config[cameraName+".cy"].as<double>();
+    double delay=config[cameraName+".delay"].as<double>();
 
     Mi<<fx,0,cx,
     0,fy,cy,
@@ -38,6 +39,23 @@ camera::camera(std::string path,std::string cameraName)
     t=-rotation_matrix3.transpose()*pos;
     RM=R.inverse()*Mi.inverse();
     RT=R.inverse()*t;
+    //初始化robotpix缓存。根据相机延时时间进行缓存大小设置
+    int delayNum=CAMERA_FPS*delay;
+    for (size_t i = 0; i < delayNum; i++)
+    {
+        Eigen::Matrix<double,2,3> apix;
+        robotpix.push_back(apix);
+        if(robotpix.size()==delayNum)
+        {
+            break;
+        }
+        else if(robotpix.size()>delayNum)
+        {
+            printf("error:robotpix datasize is too big\n");
+            break;
+        }
+    }
+    
     
 }
 camera::camera(){}

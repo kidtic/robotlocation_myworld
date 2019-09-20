@@ -12,12 +12,15 @@
 
 #include <cameralocation/cameraKeyPoint.h>
 
+#define CAMERA_FPS 40
+
 
 
 class camera
 {
 private:
-    
+    //robot坐标轴的投影像素点
+    std::vector<Eigen::Matrix<double,2,3>> robotpix;
 
 public://data
     /* data */
@@ -28,6 +31,7 @@ public://data
     Eigen::Matrix3d R;//旋转矩阵
     Eigen::Matrix3d RM;//可以与Pc组成K向量
     Eigen::Vector3d RT;//B向量
+    
 
 public://func
     camera(std::string path,std::string cameraName);
@@ -39,6 +43,11 @@ public://func
 
     //带上方向，显示机器人的x轴与y轴，在相机中以3个像素点的信息
     Eigen::Matrix<double,2,3> robot2pix(g2o::SE3Quat input);
+
+    //对于robotpix 进行压入数据，并且弹出首段数据、
+    void robotpix_push(Eigen::Matrix<double,2,3> input);
+
+
 
 };
 
