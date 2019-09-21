@@ -90,10 +90,29 @@ Eigen::Matrix<double,2,3> camera::robot2pix(g2o::SE3Quat input)
 {
     Eigen::Matrix<double,2,3> ret;
     Eigen::Vector2d z[3];
-    
-    z[0]=world2pix(input*g2o::Vector3D(0,0,0));
-    z[1]=world2pix(input*g2o::Vector3D(0.1,0,0));
-    z[2]=world2pix(input*g2o::Vector3D(0,0.1,0));
+   
+    z[0]=world2pix(input*g2o::Vector3(0,0,0));
+    z[1]=world2pix(input*g2o::Vector3(0.1,0,0));
+    z[2]=world2pix(input*g2o::Vector3(0,0.1,0));
     ret<<z[0],z[1],z[2];
     return ret;
+}
+
+void camera::robotpix_push(Eigen::Matrix<double,2,3> input)
+{
+    robotpix.push_back(input);
+    std::vector<Eigen::Matrix<double,2,3>>::iterator e=robotpix.begin();
+    robotpix.erase(e);
+}
+
+//返回robotpix数据
+Eigen::Matrix<double,2,3> camera::robotpix_Index(int index)
+{
+    return robotpix[index];
+}
+
+//返回robotpix的大小
+int camera::robotpix_size()
+{
+    return robotpix.size();
 }

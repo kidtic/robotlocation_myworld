@@ -52,7 +52,7 @@ void imuCallback(const sensor_msgs::ImuConstPtr msg)
     imuinput.linear_acceleration=msg->linear_acceleration;
     imuinput.orientation=msg->orientation;
 
-    location.imuodom.imu_push(imuinput);
+    location.imuodom.updata_robotPQV_fromIMU(imuinput);
     //printf("ok\n");
 
 }
@@ -66,5 +66,9 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     }
     Eigen::Vector3d robotP=location.MultiCameraLocation(botPc);
     cout<<"robot pose :\n"<<robotP<<endl;
+    //------开始新算法验证
+    //要做的目的只有一个，这个时候imuodom应该是准备好了的，需要做的只有一个
+    //就是根据msg也就是多个相机的robot像素点来更新imuodom.robotPQV[0]
+
     
 }

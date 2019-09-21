@@ -89,19 +89,24 @@ void chatterCallback(const nav_msgs::OdometryConstPtr msg)
     g2o::SE3Quat pos_quat(tmp_Q,pos);
     
     //计算位姿映射到各个相机上的像素点
-    Eigen::Matrix<double,2,3> pix;
+    
     cameralocation::cameraKeyPoint robotImgmsg;
     for (size_t i = 0; i < CAMERA_NUM; i++)
     {
-      /* code */
-      pix=cam[i].robot2pix(pos_quat);
+      //计算投影
+      Eigen::Matrix<double,2,3> pix=cam[i].robot2pix(pos_quat);
+      //打入缓存
+      cam[i].robotpix_push(pix);
+      //取出最后一个缓存序列，加上延时
+      Eigen::Matrix<double,2,3> pixdelay = cam[i].robotpix_Index(0);
+
       robotImgmsg.header=msg->header;
-      robotImgmsg.org[0+2*i]=(int32_t)pix(0,0);
-      robotImgmsg.org[1+2*i]=(int32_t)pix(1,0);
-      robotImgmsg.xaxis[0+2*i]=(int32_t)pix(0,1);
-      robotImgmsg.xaxis[1+2*i]=(int32_t)pix(1,1);
-      robotImgmsg.yaxis[0+2*i]=(int32_t)pix(0,2);
-      robotImgmsg.yaxis[1+2*i]=(int32_t)pix(1,2);  
+      robotImgmsg.org[0+2*i]=(int32_t)pixdelay(0,0);
+      robotImgmsg.org[1+2*i]=(int32_t)pixdelay(1,0);
+      robotImgmsg.xaxis[0+2*i]=(int32_t)pixdelay(0,1);
+      robotImgmsg.xaxis[1+2*i]=(int32_t)pixdelay(1,1);
+      robotImgmsg.yaxis[0+2*i]=(int32_t)pixdelay(0,2);
+      robotImgmsg.yaxis[1+2*i]=(int32_t)pixdelay(1,2);  
     }
     pub.publish(robotImgmsg);
     //刷新时间

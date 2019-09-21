@@ -47,7 +47,11 @@ public://func
     //对于robotpix 进行压入数据，并且弹出首段数据、
     void robotpix_push(Eigen::Matrix<double,2,3> input);
 
+    //返回robotpix数据
+    Eigen::Matrix<double,2,3> robotpix_Index(int index);
 
+    //返回robotpix的大小
+    int robotpix_size(); 
 
 };
 
