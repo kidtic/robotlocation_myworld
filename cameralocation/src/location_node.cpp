@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <cameralocation/location.h>
+#include <chrono>
 
 using namespace std;
 
@@ -46,19 +47,23 @@ int main(int argc, char **argv)
 //-----------------回调函数
 void imuCallback(const sensor_msgs::ImuConstPtr msg)
 {
+    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
     sensor_msgs::Imu imuinput;
     imuinput.header=msg->header;
     imuinput.angular_velocity=msg->angular_velocity;
     imuinput.linear_acceleration=msg->linear_acceleration;
     imuinput.orientation=msg->orientation;
-
     location.imuodom.updata_robotPQV_fromIMU(imuinput);
-    //printf("ok\n");
+    
+    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
+    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>> ( t2-t1 );
+    printf("optimization costs time: %f s",time_used.count());
 
 }
 void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
 {
     //test 多相机融合定位
+    /*
     std::vector<Eigen::Vector2d> botPc;
     for (size_t i = 0; i < CAMERA_NUM; i++)
     {
@@ -66,9 +71,26 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     }
     Eigen::Vector3d robotP=location.MultiCameraLocation(botPc);
     cout<<"robot pose :\n"<<robotP<<endl;
+    */
+
+
+
     //------开始新算法验证
     //要做的目的只有一个，这个时候imuodom应该是准备好了的，需要做的只有一个
     //就是根据msg也就是多个相机的robot像素点来更新imuodom.robotPQV[0]
 
+/*
+    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+    //g2o::SE3Quat robotpose;
+    //robotpose=location.imuCameraLocation(msg);
+    //Imuodom::PQV_type rp=location.imuodom.SE3_to_PQV(robotpose,location.imuodom.robotPQV[0].tmp_V);
+    //location.imuodom.robotPQV[0]=rp;
+    //location.imuodom.updata_robotPQV_fromIMU();
+    //std::cout<<"robotpose:\n"<<location.imuodom.robotPQV.back().tmp_P<<endl;
+
+    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
+    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>> ( t2-t1 );
+    cout<<"optimization costs time: "<<time_used.count() <<" seconds."<<endl;
+*/
     
 }

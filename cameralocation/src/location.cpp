@@ -55,4 +55,68 @@ Eigen::Vector3d Location::MultiCameraLocation(std::vector<Eigen::Vector2d> Pc)
 }
 
 
+//定位算法
+g2o::SE3Quat Location::imuCameraLocation(const cameralocation::cameraKeyPointConstPtr msg)
+{
+    
+    //解析msg
+    std::vector< Eigen::Matrix<double,6,1> > camKP;
+    for (size_t i = 0; i < camInfo.size(); i++)
+    {
+        Eigen::Matrix<double,6,1> pa;
+        pa <<   msg->org[2*i],  msg->org[1+2*i], msg->xaxis[2*i], msg->xaxis[1+2*i], msg->yaxis[2*i], msg->yaxis[1+2*i];
+        camKP.push_back(pa);  
+    }
+    
+
+    // -----初始化g2o
+   // 初始化g2o
+    typedef g2o::BlockSolver< g2o::BlockSolverTraits<6,6> > Block;  // pose 维度为 6, landmark 维度为 3
+    //Block::LinearSolverType* linearSolver = new g2o::LinearSolverCSparse<Block::PoseMatrixType>(); // 线性方程求解器
+    std::unique_ptr<Block::LinearSolverType> linearSolver(new g2o::LinearSolverCSparse<Block::PoseMatrixType>());
+
+    std::unique_ptr<Block> solver_ptr (new Block( std::move(linearSolver) ));     // 矩阵块求解器
+
+    //g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg ( solver_ptr );
+    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg ( std::move(solver_ptr));
+
+    g2o::SparseOptimizer optimizer;
+    optimizer.setAlgorithm ( solver );
+
+    // -----vertex
+    g2o::VertexSE3Expmap* pose = new g2o::VertexSE3Expmap(); // camera pose
+    pose->setId(0);
+    pose->setEstimate( imuodom.PQV_to_SE3(imuodom.robotPQV[0]) );
+    optimizer.addVertex( pose );
+
+    // -----edges
+    int index = 1;
+    std::vector<EdgeIMUCameraLocationPoseOnly*> edges;
+    for ( size_t i=0; i<camInfo.size(); i++ )
+    {
+        EdgeIMUCameraLocationPoseOnly* edge = new EdgeIMUCameraLocationPoseOnly(
+            camInfo[i],imuodom);
+        edge->setId( index );
+        edge->setVertex( 0, dynamic_cast<g2o::VertexSE3Expmap*> (pose) );
+        //设置测
+        edge->setMeasurement( camKP[i] );
+        edge->setInformation( Eigen::Matrix<double,6,6>::Identity()*1e4 );
+        optimizer.addEdge(edge);
+        index++;
+        edges.push_back(edge);
+    }
+
+    //开始计算
+    
+    optimizer.setVerbose( false );
+    optimizer.initializeOptimization();
+    optimizer.optimize(1);
+    
+
+    
+    return pose->estimate();
+
+}
+
+
 

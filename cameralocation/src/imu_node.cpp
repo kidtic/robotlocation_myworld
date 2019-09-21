@@ -14,8 +14,8 @@
 ros::Publisher pub;
 
 //config noise
-const double mean=0.001;
-const double stddev=0.01;
+const double mean=0.000;
+const double stddev=0.00;
 const double ang_mean=0.0;
 const double ang_stddev=0.0;
 std::default_random_engine generator;
