@@ -53,23 +53,42 @@ class Location
 {
 private:
     /* data */
-    std::vector<camera> camInfo;//与cameraSub对应的相机
+    
     
 public://data
     
     Imuodom imuodom;//imu里程计，记录imu数据
+    std::vector<camera> camInfo;//与cameraSub对应的相机
 public://func
     Location();
     Location(int casheSec,int camNum,std::string configpath);//casheSec:存储多少秒内的数据.camNUM:有多少相机
     ~Location();
 
     /*
+    * camera 的同步缓存初始化
+    * 会根据camInfo的延时大小来初始化缓存大小。
+    */ 
+    void cameraCashe_init();
+
+    /*
+    * 将相机的robot像素点数据push进对应相机的同步缓存。
+    * 
+    */ 
+    void camInfoSynchCashe_push(int cameraIndex,Eigen::Matrix<double,2,3> inout);
+    void camInfoSynchCashe_push( cameralocation::cameraKeyPointConstPtr msg);
+
+    /*
     * 利用多相机线性融合算法计算机器人的中心点坐标
     * 参数：Pc：相机对应的机器人像素坐标点
     * 
-    * 
     */ 
     Eigen::Vector3d MultiCameraLocation(std::vector<Eigen::Vector2d> Pc);
+    /*
+    * 利用多相机线性融合算法计算机器人的位置姿态
+    * 参数：camKP：每一个相机 捕捉到的机器人的3关键点的像素坐标投影
+    */ 
+    g2o::SE3Quat MultiCameraLocation(std::vector<Eigen::Matrix<double ,2,3>> camKP);
+
     /*
     * 新的算法定位，主要靠imu先实时记录近时间段的轨迹，再通过相机来矫正
     * IMU的轨迹。

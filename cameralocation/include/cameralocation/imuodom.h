@@ -40,7 +40,7 @@ public://data
     {
         Eigen::Vector3d tmp_P;
         Eigen::Quaterniond tmp_Q;
-        Eigen::Vector3d tmp_V;
+        Eigen::Vector3d tmp_V;//世界坐标系下的速度
     };
     std::vector<PQV_type> robotPQV;
     //debug

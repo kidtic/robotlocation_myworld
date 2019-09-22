@@ -19,8 +19,9 @@
 class camera
 {
 private:
-    //robot坐标轴的投影像素点
+    //robot坐标轴的投影像素点，用在相机发布的时候造成延时的作用
     std::vector<Eigen::Matrix<double,2,3>> robotpix;
+    
 
 public://data
     /* data */
@@ -31,6 +32,9 @@ public://data
     Eigen::Matrix3d R;//旋转矩阵
     Eigen::Matrix3d RM;//可以与Pc组成K向量
     Eigen::Vector3d RT;//B向量
+
+    //相机定位的时候，为了同步而增加的缓存
+    std::vector<Eigen::Matrix<double,2,3>> robotPixSynch;
     
 
 public://func
@@ -53,6 +57,13 @@ public://func
     //返回robotpix的大小
     int robotpix_size(); 
 
+    //返回延时时间大小，也就是robotpix的大小
+    int delay_size();
+
+    //提供msg与Eigen::Matrix<double,2,3>的转换方法
+    static Eigen::Matrix<double,2,3> msg2mat(cameralocation::cameraKeyPointConstPtr msg,int cameraIndex);
+    static std::vector<Eigen::Matrix<double,2,3>> msg2mat(cameralocation::cameraKeyPointConstPtr msg);
+    
 };
 
 

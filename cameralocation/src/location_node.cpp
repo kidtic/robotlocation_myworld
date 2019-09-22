@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 //-----------------回调函数
 void imuCallback(const sensor_msgs::ImuConstPtr msg)
 {
-    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+    //chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
     sensor_msgs::Imu imuinput;
     imuinput.header=msg->header;
     imuinput.angular_velocity=msg->angular_velocity;
@@ -55,9 +55,9 @@ void imuCallback(const sensor_msgs::ImuConstPtr msg)
     imuinput.orientation=msg->orientation;
     location.imuodom.updata_robotPQV_fromIMU(imuinput);
     
-    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
-    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>> ( t2-t1 );
-    printf("optimization costs time: %f s",time_used.count());
+    //chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
+    //chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>> ( t2-t1 );
+    //printf("optimization costs time: %f s",time_used.count());
 
 }
 void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
@@ -92,5 +92,22 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>> ( t2-t1 );
     cout<<"optimization costs time: "<<time_used.count() <<" seconds."<<endl;
 */
-    
+
+    //----相机同步+imu补偿算法
+    location.camInfoSynchCashe_push(msg);
+    //查看相机是否同步--同步ok
+    //cout<<location.camInfo[0].robotPixSynch[0](0,0)<<endl;    
+    //cout<<location.camInfo[1].robotPixSynch[0](0,0)<<endl;    
+    //cout<<location.camInfo[2].robotPixSynch[0](0,0)<<endl;    
+    //cout<<location.camInfo[3].robotPixSynch[0](0,0)<<endl;   
+     std::vector<Eigen::Matrix<double ,2,3>> camKP_dl;
+     for (size_t i = 0; i < location.camInfo.size(); i++)
+     {
+         camKP_dl.push_back(location.camInfo[i].robotPixSynch[0]);
+     }
+     g2o::SE3Quat robotPose=location.MultiCameraLocation(camKP_dl);
+     cout<<"pose\n"<<robotPose.translation()<<endl;
+     cout<<"quat\n"<<robotPose.rotation().w()<<endl;
+     
+
 }

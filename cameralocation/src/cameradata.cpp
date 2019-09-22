@@ -116,3 +116,33 @@ int camera::robotpix_size()
 {
     return robotpix.size();
 }
+
+int camera::delay_size()
+{
+    return robotpix.size();
+}
+
+
+Eigen::Matrix<double,2,3> camera::msg2mat(cameralocation::cameraKeyPointConstPtr msg,int cameraIndex)
+{
+    //解析msg
+    Eigen::Matrix<double,2,3> camKP;
+    
+    camKP<< msg->org[2*cameraIndex],  msg->xaxis[2*cameraIndex], msg->yaxis[2*cameraIndex], 
+            msg->org[1+2*cameraIndex],msg->xaxis[1+2*cameraIndex], msg->yaxis[1+2*cameraIndex];
+    return camKP;
+}
+std::vector<Eigen::Matrix<double,2,3>> camera::msg2mat(cameralocation::cameraKeyPointConstPtr msg)
+{
+    //解析msg
+    std::vector< Eigen::Matrix<double,2,3> > camKP;
+    int cameraNUm=msg->org.size()/2;
+    for (size_t i = 0; i < cameraNUm; i++)
+    {
+        Eigen::Matrix<double,2,3> pa;
+        pa <<   msg->org[2*i],   msg->xaxis[2*i],  msg->yaxis[2*i], 
+                msg->org[1+2*i],msg->xaxis[1+2*i],msg->yaxis[1+2*i];
+        camKP.push_back(pa);  
+    }
+    return camKP;
+}

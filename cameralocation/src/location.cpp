@@ -4,20 +4,73 @@
 Location::Location(int casheSec,int camNum,std::string configpath)
 {
 
-    imuodom=Imuodom(120*casheSec);
+    //imuodom=Imuodom(120*casheSec);
     for (size_t i = 0; i < camNum; i++)
     {
         /* code */
         camera acam(configpath,"camera"+std::to_string(i));
         camInfo.push_back(acam);
     }
-     
+    cameraCashe_init();
     
 }
 
 Location::~Location()
 {
 }
+
+void Location::cameraCashe_init()
+{
+    //比较相机延时大小，选出延时最大的哪一个
+    int maxDelay=0,maxDelayIndex;
+    for (size_t i = 0; i < camInfo.size(); i++)
+    {
+        if(camInfo[i].delay_size()>maxDelay)
+        {   
+            maxDelay=camInfo[i].delay_size();
+            maxDelayIndex=i;
+        }
+    }
+    printf("maxDelay:%d \n",maxDelay);
+
+    //初始化缓存
+    for (size_t i = 0; i < camInfo.size(); i++)
+    {
+        int cashesize=maxDelay-camInfo[i].delay_size()+1;
+        camInfo[i].robotPixSynch.clear();
+        for (size_t j = 0; j < cashesize; j++)
+        {
+            Eigen::Matrix<double,2,3> newmat;
+            camInfo[i].robotPixSynch.push_back(newmat);
+        }
+        
+    }
+    //根据最大的相机延时大小来确定imu的缓存大小，确保imu[0]与延时最大的那个相机是同步的。
+    
+    imuodom=Imuodom(maxDelay*3);
+
+    
+}
+/*
+* 将相机的robot像素点数据push进对应相机的同步缓存。
+* 
+*/ 
+void Location::camInfoSynchCashe_push(int cameraIndex,Eigen::Matrix<double,2,3> input)
+{
+    camInfo[cameraIndex].robotPixSynch.push_back(input);
+    std::vector<Eigen::Matrix<double,2,3>>::iterator e=camInfo[cameraIndex].robotPixSynch.begin();
+    camInfo[cameraIndex].robotPixSynch.erase(e);
+}
+void Location::camInfoSynchCashe_push( cameralocation::cameraKeyPointConstPtr msg)
+{
+    std::vector<Eigen::Matrix<double,2,3>> input=camera::msg2mat(msg);
+    for (size_t i = 0; i < camInfo.size(); i++)
+    {
+        camInfoSynchCashe_push(i,input[i]);
+    }
+    
+}
+
 
 Eigen::Vector3d Location::MultiCameraLocation(std::vector<Eigen::Vector2d> Pc)
 {
@@ -50,6 +103,39 @@ Eigen::Vector3d Location::MultiCameraLocation(std::vector<Eigen::Vector2d> Pc)
     //
     Eigen::Vector3d ret;
     ret<<Pw[0],Pw[1],Pw[2];
+    return ret;
+    
+}
+
+g2o::SE3Quat Location::MultiCameraLocation(std::vector<Eigen::Matrix<double ,2,3>> camKP)
+{
+    std::vector<Eigen::Vector3d> oxy;//robot的坐标轴
+    for (size_t i = 0; i < 3; i++)
+    {
+        std::vector<Eigen::Vector2d> Pc;
+        for (size_t j = 0; j < camKP.size(); j++)
+        {
+            Pc.push_back(Eigen::Vector2d(camKP[j](0,i),camKP[j](1,i)));
+        }
+
+        oxy.push_back(MultiCameraLocation(Pc)); 
+    }
+    //--------进行转化计算，得到SE3
+    //计算ox oy向量
+    Eigen::Vector3d ox=oxy[1]-oxy[0];
+    Eigen::Vector3d oy=oxy[2]-oxy[0];
+
+    double ang_z=atan2(ox[1],ox[0]);
+    double c_xynorm=sqrt(ox[0]*ox[0]+ox[1]*ox[1]);
+    double ang_y=atan2(ox[2],c_xynorm);
+    double ang_x=acos( (-ox[1]*oy[0]+ox[0]*oy[1]) / (c_xynorm* oy.norm()) );
+
+    Eigen::Quaterniond tmpQ;
+    tmpQ = Eigen::AngleAxisd(ang_z, Eigen::Vector3d::UnitZ()) * 
+            Eigen::AngleAxisd(ang_y, Eigen::Vector3d::UnitY()) * 
+            Eigen::AngleAxisd(ang_x, Eigen::Vector3d::UnitX());
+    
+    g2o::SE3Quat ret=g2o::SE3Quat(tmpQ,oxy[0]);
     return ret;
     
 }
