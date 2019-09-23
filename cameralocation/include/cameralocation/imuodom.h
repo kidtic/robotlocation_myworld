@@ -121,8 +121,8 @@ public://func
     *      以得补一个速度
     * ok
     */ 
-    g2o::SE3Quat PQV_to_SE3(PQV_type input);
-    PQV_type SE3_to_PQV(g2o::SE3Quat input,Eigen::Vector3d tmp_V);
+    static g2o::SE3Quat PQV_to_SE3(PQV_type input);
+    static PQV_type SE3_to_PQV(g2o::SE3Quat input,Eigen::Vector3d tmp_V);
 
     /*
     * 说明：根据imudata，更新robotPQV

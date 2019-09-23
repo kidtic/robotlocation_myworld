@@ -17,6 +17,10 @@ Location location;
 ros::Subscriber imuSub;//订阅了机器人的imu信息
 ros::Subscriber cameraSub;//订阅了相机的消息，
 
+//发布相机同步定位+imu补偿算法的定位结果
+ros::Publisher locationPub;
+ros::Publisher onlycameraLocationPub;
+
 int main(int argc, char **argv)
 {
   
@@ -37,6 +41,10 @@ int main(int argc, char **argv)
     //订阅消息
     imuSub=nh.subscribe("/zbot/imu_data",1000,imuCallback);
     cameraSub=nh.subscribe("/zbot/camera",1000,cameraCallback);
+
+    //fabu
+    locationPub = nh.advertise<geometry_msgs::PoseStamped>("zbot/imucamLocationPose",1000);
+    onlycameraLocationPub=nh.advertise<geometry_msgs::PoseStamped>("zbot/camLocationPose",1000);
 
     ros::spin();
     return 0;
@@ -62,6 +70,10 @@ void imuCallback(const sensor_msgs::ImuConstPtr msg)
 }
 void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
 {
+    static Imuodom::PQV_type lastPQV;
+    static double lastRosTime=msg->header.stamp.toSec();
+
+
     //test 多相机融合定位
     /*
     std::vector<Eigen::Vector2d> botPc;
@@ -95,19 +107,73 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
 
     //----相机同步+imu补偿算法
     location.camInfoSynchCashe_push(msg);
-    //查看相机是否同步--同步ok
-    //cout<<location.camInfo[0].robotPixSynch[0](0,0)<<endl;    
-    //cout<<location.camInfo[1].robotPixSynch[0](0,0)<<endl;    
-    //cout<<location.camInfo[2].robotPixSynch[0](0,0)<<endl;    
-    //cout<<location.camInfo[3].robotPixSynch[0](0,0)<<endl;   
-     std::vector<Eigen::Matrix<double ,2,3>> camKP_dl;
-     for (size_t i = 0; i < location.camInfo.size(); i++)
-     {
-         camKP_dl.push_back(location.camInfo[i].robotPixSynch[0]);
-     }
-     g2o::SE3Quat robotPose=location.MultiCameraLocation(camKP_dl);
-     cout<<"pose\n"<<robotPose.translation()<<endl;
-     cout<<"quat\n"<<robotPose.rotation().w()<<endl;
+    //相机同步   
+    std::vector<Eigen::Matrix<double ,2,3>> camKP_dl;
+    for (size_t i = 0; i < location.camInfo.size(); i++)
+    {
+        camKP_dl.push_back(location.camInfo[i].robotPixSynch[0]);
+    }
+    //相机定位
+    g2o::SE3Quat robotPose=location.MultiCameraLocation(camKP_dl);
+    //通过相机定位计算相机定位速度。
+    double dt=msg->header.stamp.toSec()-lastRosTime;
+    if (dt>0.03||dt<0.02)dt=0.025;
+    Eigen::Vector3d robotV_cam=(robotPose.translation()-lastPQV.tmp_P)/dt;
+
+    //imu补偿
+    Imuodom::PQV_type firstPQV=Imuodom::SE3_to_PQV(robotPose,0.05*robotV_cam+0.95*location.imuodom.robotPQV[0].tmp_V);
+    //Imuodom::PQV_type firstPQV=Imuodom::SE3_to_PQV(robotPose,location.imuodom.robotPQV[0].tmp_V);
+    //Imuodom::PQV_type firstPQV=Imuodom::SE3_to_PQV(robotPose,robotV_cam);
+    location.imuodom.robotPQV[0]=firstPQV;
+    location.imuodom.updata_robotPQV_fromIMU();
+
+    double x=location.imuodom.robotPQV.back().tmp_P[0];
+    double y=location.imuodom.robotPQV.back().tmp_P[1];
+    double z=location.imuodom.robotPQV.back().tmp_P[2];
+    cout<<"robotpose:\n"<<(int)(x*100)/100.0<<"\n"<<(int)(y*100)/100.0<<"\n"<<(int)(z*100)/100.0<<"\n"<<endl;
+    cout<<"robotquat:\n"<<location.imuodom.robotPQV.back().tmp_Q.w()<<endl;
+    //如果定位故障，则停止
+    if((abs(x)+abs(y)+abs(z))>30||abs((int)(x*100)/100.0)>10||abs(y)>10)
+    { 
+        cout<<"定位故障"<<endl;
+        cout<<"firstPQV.tmp_p:\n"<<firstPQV.tmp_P<<endl;
+        cout<<"firstPQV.tmp_q:\n"<<firstPQV.tmp_Q.w()<<","<<
+            firstPQV.tmp_Q.x()<<","<<
+            firstPQV.tmp_Q.y()<<","<<
+            firstPQV.tmp_Q.z()<<endl;
+        cout<<"firstPQV.tmp_v:\n"<<firstPQV.tmp_V<<endl;
+        for (size_t i = 0; i < location.imuodom.robotPQV.size(); i++)
+        {
+            cout<<"robotPQV["<<i<<"]:\n"<<location.imuodom.robotPQV[i].tmp_P<<endl;
+        }
+        
+        ros::shutdown();
+    }
      
+    geometry_msgs::PoseStamped robotposeOut;
+    robotposeOut.header=msg->header;
+    robotposeOut.pose.position.x=x;
+    robotposeOut.pose.position.y=y;
+    robotposeOut.pose.position.z=z;
+    robotposeOut.pose.orientation.x=location.imuodom.robotPQV.back().tmp_Q.x();
+    robotposeOut.pose.orientation.y=location.imuodom.robotPQV.back().tmp_Q.y();
+    robotposeOut.pose.orientation.z=location.imuodom.robotPQV.back().tmp_Q.z();
+    robotposeOut.pose.orientation.w=location.imuodom.robotPQV.back().tmp_Q.w();
+    locationPub.publish(robotposeOut);
+
+    geometry_msgs::PoseStamped robotposeOut1;
+    robotposeOut1.header=msg->header;
+    robotposeOut1.pose.position.x=robotPose.translation()[0];
+    robotposeOut1.pose.position.y=robotPose.translation()[1];
+    robotposeOut1.pose.position.z=robotPose.translation()[2];
+    robotposeOut1.pose.orientation.x=robotPose.rotation().x();
+    robotposeOut1.pose.orientation.y=robotPose.rotation().y();
+    robotposeOut1.pose.orientation.z=robotPose.rotation().z();
+    robotposeOut1.pose.orientation.w=robotPose.rotation().w();
+    onlycameraLocationPub.publish(robotposeOut1);
+
+
+    lastPQV=firstPQV;
+    lastRosTime=msg->header.stamp.toSec();
 
 }
