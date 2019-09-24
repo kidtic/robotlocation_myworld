@@ -140,7 +140,7 @@ g2o::SE3Quat Location::MultiCameraLocation(std::vector<Eigen::Matrix<double ,2,3
     
 }
 
-
+/*
 //定位算法
 g2o::SE3Quat Location::imuCameraLocation(const cameralocation::cameraKeyPointConstPtr msg)
 {
@@ -204,5 +204,5 @@ g2o::SE3Quat Location::imuCameraLocation(const cameralocation::cameraKeyPointCon
 
 }
 
-
+*/
 

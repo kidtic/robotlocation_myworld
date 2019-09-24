@@ -96,7 +96,7 @@ public://func
     *    ：imuoddata：imu里程计
     * 
     */
-    g2o::SE3Quat imuCameraLocation(const cameralocation::cameraKeyPointConstPtr msg);
+    //g2o::SE3Quat imuCameraLocation(const cameralocation::cameraKeyPointConstPtr msg);
 
     
     

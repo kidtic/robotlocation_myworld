@@ -110,8 +110,9 @@ Imuodom::PQV_type  Imuodom::imu_motion_function(PQV_type last_pqv,sensor_msgs::I
   ret.tmp_P=last_pqv.tmp_P+last_pqv.tmp_V*dt+0.5*dt*dt*un_acc;
   ret.tmp_V = last_pqv.tmp_V + dt * un_acc;
   //判断数组是否有效，若是无效数字则继承lastpqv
-  if( isfinite(ret.tmp_P[0]) && isfinite(ret.tmp_P[1]) && isfinite(ret.tmp_P[2]) 
-    && isfinite(ret.tmp_V[0]) && isfinite(ret.tmp_V[1]) && isfinite(ret.tmp_V[2]))
+  
+  if( std::isfinite(ret.tmp_P[0]) && std::isfinite(ret.tmp_P[1]) && std::isfinite(ret.tmp_P[2]) 
+    && std::isfinite(ret.tmp_V[0]) && std::isfinite(ret.tmp_V[1]) && std::isfinite(ret.tmp_V[2]))
   {
     return ret;
   }
