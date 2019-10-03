@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <cameralocation/location.h>
 #include <chrono>
+#include <fstream>
 
 using namespace std;
 
@@ -9,6 +10,8 @@ using namespace std;
 //回调函数
 void imuCallback(const sensor_msgs::ImuConstPtr msg);
 void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg);
+void odomCallback(const nav_msgs::OdometryConstPtr msg);
+
 
 
 //定位器
@@ -16,15 +19,20 @@ Location location;
 //消息订阅
 ros::Subscriber imuSub;//订阅了机器人的imu信息
 ros::Subscriber cameraSub;//订阅了相机的消息，
+ros::Subscriber realodom;//订阅机器人的真实位置信息
 
 //发布相机同步定位+imu补偿算法的定位结果
 ros::Publisher locationPub;
 ros::Publisher onlycameraLocationPub;
 ros::Publisher onlyIMULocationPub;
 
-
 //imu定位的里程
 Imuodom imuLocation;
+//真实的机器人位置信息
+g2o::SE3Quat realRobotLocation;
+
+//用于数据获取
+ofstream errorDataFile;
 
 int main(int argc, char **argv)
 {
@@ -44,11 +52,13 @@ int main(int argc, char **argv)
     
     //延时
     //sleep(5);
-    
+
+    errorDataFile.open("/home/kk/myproject/ros-projrct/catkin_ws_robotLocation/src/robotlocation_myworld/LocationErrorData.txt",ios::out);
     
     //订阅消息
     imuSub=nh.subscribe("/zbot/imu_data",1000,imuCallback);
     cameraSub=nh.subscribe("/zbot/camera",1000,cameraCallback);
+    realodom=nh.subscribe("odom",1000,odomCallback);
 
     //fabu
     locationPub = nh.advertise<geometry_msgs::PoseStamped>("zbot/imucamLocationPose",1000);
@@ -57,6 +67,7 @@ int main(int argc, char **argv)
 
 
     ros::spin();
+    errorDataFile.close();
     return 0;
 }
 
@@ -86,7 +97,7 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     static Imuodom::PQV_type lastPQV;
     static double lastRosTime=msg->header.stamp.toSec();
 
-
+    double errordata[3];//定位误差
     //test 多相机融合定位
     /*
     std::vector<Eigen::Vector2d> botPc;
@@ -173,6 +184,7 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     robotposeOut.pose.orientation.z=location.imuodom.robotPQV.back().tmp_Q.z();
     robotposeOut.pose.orientation.w=location.imuodom.robotPQV.back().tmp_Q.w();
     locationPub.publish(robotposeOut);
+    errordata[0] = (realRobotLocation.translation()-location.imuodom.robotPQV.back().tmp_P).norm();
 
     //---------------相机融合定位
     std::vector<Eigen::Matrix<double ,2,3>> camKP_dl0;
@@ -193,6 +205,7 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     robotposeOut1.pose.orientation.z=robotPose.rotation().z();
     robotposeOut1.pose.orientation.w=robotPose.rotation().w();
     onlycameraLocationPub.publish(robotposeOut1);
+    errordata[1] = (realRobotLocation.translation()-robotPose.translation()).norm();
 
     //---------------IMU历程
     robotPose=Imuodom::PQV_to_SE3(imuLocation.robotPQV.back());
@@ -205,8 +218,25 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     robotposeOut1.pose.orientation.z=robotPose.rotation().z();
     robotposeOut1.pose.orientation.w=robotPose.rotation().w();
     onlyIMULocationPub.publish(robotposeOut1);
+    errordata[2] = (realRobotLocation.translation()-robotPose.translation()).norm();
 
     lastPQV=firstPQV;
     lastRosTime=msg->header.stamp.toSec();
 
+    //计算误差写数据
+    if(msg->header.stamp.toSec()>6.0)
+    {
+        errorDataFile<<msg->header.stamp.toSec() <<" " 
+                    <<errordata[0]<<" "
+                    <<errordata[1]<<" "
+                    <<errordata[2]<<" "
+                    << endl;
+    }
+}
+
+void odomCallback(const nav_msgs::OdometryConstPtr msg)
+{
+    Eigen::Quaterniond realquat(msg->pose.pose.orientation.w,msg->pose.pose.orientation.x,msg->pose.pose.orientation.y,msg->pose.pose.orientation.z);
+    Eigen::Vector3d pose(msg->pose.pose.position.x,msg->pose.pose.position.y,msg->pose.pose.position.z);
+    realRobotLocation=g2o::SE3Quat(realquat,pose);
 }
