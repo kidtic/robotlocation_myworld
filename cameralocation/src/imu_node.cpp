@@ -14,10 +14,10 @@
 ros::Publisher pub;
 
 //config noise
-const double mean=0.000001;
-const double stddev=0.001;
-const double ang_mean=0.0;
-const double ang_stddev=0.0;
+const double mean=0.00001;
+const double stddev=0.01;
+const double ang_mean=0.000001;
+const double ang_stddev=0.0001;
 std::default_random_engine generator;
 std::normal_distribution<double> dist(mean,stddev);
 std::normal_distribution<double> ang_dist(ang_mean,ang_stddev);

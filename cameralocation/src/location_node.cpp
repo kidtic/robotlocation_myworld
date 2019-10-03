@@ -20,6 +20,11 @@ ros::Subscriber cameraSub;//订阅了相机的消息，
 //发布相机同步定位+imu补偿算法的定位结果
 ros::Publisher locationPub;
 ros::Publisher onlycameraLocationPub;
+ros::Publisher onlyIMULocationPub;
+
+
+//imu定位的里程
+Imuodom imuLocation;
 
 int main(int argc, char **argv)
 {
@@ -35,7 +40,10 @@ int main(int argc, char **argv)
     {
         location=Location(2,CAMERA_NUM,"src/robotlocation_myworld/cameralocation/config/config.yaml");
     }
+    imuLocation=Imuodom(10);
     
+    //延时
+    //sleep(5);
     
     
     //订阅消息
@@ -45,6 +53,8 @@ int main(int argc, char **argv)
     //fabu
     locationPub = nh.advertise<geometry_msgs::PoseStamped>("zbot/imucamLocationPose",1000);
     onlycameraLocationPub=nh.advertise<geometry_msgs::PoseStamped>("zbot/camLocationPose",1000);
+    onlyIMULocationPub=nh.advertise<geometry_msgs::PoseStamped>("zbot/onlyimuLocationPose",1000);
+
 
     ros::spin();
     return 0;
@@ -62,6 +72,9 @@ void imuCallback(const sensor_msgs::ImuConstPtr msg)
     imuinput.linear_acceleration=msg->linear_acceleration;
     imuinput.orientation=msg->orientation;
     location.imuodom.updata_robotPQV_fromIMU(imuinput);
+
+    //IMU定位估计
+    imuLocation.updata_robotPQV_fromIMU(imuinput);
     
     //chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
     //chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>> ( t2-t1 );
@@ -105,7 +118,7 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     cout<<"optimization costs time: "<<time_used.count() <<" seconds."<<endl;
 */
 
-    //----相机同步+imu补偿算法
+    //---------------相机同步+imu补偿算法
     location.camInfoSynchCashe_push(msg);
     //相机同步   
     std::vector<Eigen::Matrix<double ,2,3>> camKP_dl;
@@ -161,6 +174,15 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     robotposeOut.pose.orientation.w=location.imuodom.robotPQV.back().tmp_Q.w();
     locationPub.publish(robotposeOut);
 
+    //---------------相机融合定位
+    std::vector<Eigen::Matrix<double ,2,3>> camKP_dl0;
+    for (size_t i = 0; i < location.camInfo.size(); i++)
+    {
+        camKP_dl0.push_back(location.camInfo[i].robotPixSynch.back());
+    }
+    //相机定位
+    robotPose=location.MultiCameraLocation(camKP_dl0);
+
     geometry_msgs::PoseStamped robotposeOut1;
     robotposeOut1.header=msg->header;
     robotposeOut1.pose.position.x=robotPose.translation()[0];
@@ -172,6 +194,17 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     robotposeOut1.pose.orientation.w=robotPose.rotation().w();
     onlycameraLocationPub.publish(robotposeOut1);
 
+    //---------------IMU历程
+    robotPose=Imuodom::PQV_to_SE3(imuLocation.robotPQV.back());
+    robotposeOut1.header=msg->header;
+    robotposeOut1.pose.position.x=robotPose.translation()[0];
+    robotposeOut1.pose.position.y=robotPose.translation()[1];
+    robotposeOut1.pose.position.z=robotPose.translation()[2];
+    robotposeOut1.pose.orientation.x=robotPose.rotation().x();
+    robotposeOut1.pose.orientation.y=robotPose.rotation().y();
+    robotposeOut1.pose.orientation.z=robotPose.rotation().z();
+    robotposeOut1.pose.orientation.w=robotPose.rotation().w();
+    onlyIMULocationPub.publish(robotposeOut1);
 
     lastPQV=firstPQV;
     lastRosTime=msg->header.stamp.toSec();
