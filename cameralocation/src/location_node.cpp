@@ -33,6 +33,7 @@ g2o::SE3Quat realRobotLocation;
 
 //用于数据获取
 ofstream errorDataFile;
+ofstream trackDataFile;
 
 int main(int argc, char **argv)
 {
@@ -54,7 +55,9 @@ int main(int argc, char **argv)
     //sleep(5);
 
     errorDataFile.open("/home/kk/myproject/ros-projrct/catkin_ws_robotLocation/src/robotlocation_myworld/LocationErrorData.txt",ios::out);
-    
+    trackDataFile.open("/home/kk/myproject/ros-projrct/catkin_ws_robotLocation/src/robotlocation_myworld/LocationTrackData.txt",ios::out);
+
+
     //订阅消息
     imuSub=nh.subscribe("/zbot/imu_data",1000,imuCallback);
     cameraSub=nh.subscribe("/zbot/camera",1000,cameraCallback);
@@ -98,6 +101,8 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     static double lastRosTime=msg->header.stamp.toSec();
 
     double errordata[3];//定位误差
+    double trackdata[10]; //三个定位方法的轨迹图
+
     //test 多相机融合定位
     /*
     std::vector<Eigen::Vector2d> botPc;
@@ -207,22 +212,24 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
     onlycameraLocationPub.publish(robotposeOut1);
     errordata[1] = (realRobotLocation.translation()-robotPose.translation()).norm();
 
-    //---------------IMU历程
+    //---------------IMU里程计
     robotPose=Imuodom::PQV_to_SE3(imuLocation.robotPQV.back());
-    robotposeOut1.header=msg->header;
-    robotposeOut1.pose.position.x=robotPose.translation()[0];
-    robotposeOut1.pose.position.y=robotPose.translation()[1];
-    robotposeOut1.pose.position.z=robotPose.translation()[2];
-    robotposeOut1.pose.orientation.x=robotPose.rotation().x();
-    robotposeOut1.pose.orientation.y=robotPose.rotation().y();
-    robotposeOut1.pose.orientation.z=robotPose.rotation().z();
-    robotposeOut1.pose.orientation.w=robotPose.rotation().w();
-    onlyIMULocationPub.publish(robotposeOut1);
+    geometry_msgs::PoseStamped robotposeOut2;
+    robotposeOut2.header=msg->header;
+    robotposeOut2.pose.position.x=robotPose.translation()[0];
+    robotposeOut2.pose.position.y=robotPose.translation()[1];
+    robotposeOut2.pose.position.z=robotPose.translation()[2];
+    robotposeOut2.pose.orientation.x=robotPose.rotation().x();
+    robotposeOut2.pose.orientation.y=robotPose.rotation().y();
+    robotposeOut2.pose.orientation.z=robotPose.rotation().z();
+    robotposeOut2.pose.orientation.w=robotPose.rotation().w();
+    onlyIMULocationPub.publish(robotposeOut2);
     errordata[2] = (realRobotLocation.translation()-robotPose.translation()).norm();
 
     lastPQV=firstPQV;
     lastRosTime=msg->header.stamp.toSec();
 
+    //-------------数据记录
     //计算误差写数据
     if(msg->header.stamp.toSec()>6.0)
     {
@@ -232,6 +239,22 @@ void cameraCallback(const cameralocation::cameraKeyPointConstPtr msg)
                     <<errordata[2]<<" "
                     << endl;
     }
+    //计算轨迹
+    if(msg->header.stamp.toSec()>6.0)
+    {
+        trackDataFile<<msg->header.stamp.toSec() <<" " 
+                    <<robotposeOut.pose.position.x<<" "
+                    <<robotposeOut.pose.position.y<<" "
+                    <<robotposeOut.pose.position.z<<" "
+                    <<robotposeOut1.pose.position.x<<" "
+                    <<robotposeOut1.pose.position.y<<" "
+                    <<robotposeOut1.pose.position.z<<" "
+                    <<robotposeOut2.pose.position.x<<" "
+                    <<robotposeOut2.pose.position.y<<" "
+                    <<robotposeOut2.pose.position.z<<" "
+                    << endl;
+    }
+
 }
 
 void odomCallback(const nav_msgs::OdometryConstPtr msg)
