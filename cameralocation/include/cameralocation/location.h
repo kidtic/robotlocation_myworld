@@ -17,7 +17,7 @@
 #include <g2o/core/optimization_algorithm_gauss_newton.h>
 #include <g2o/solvers/eigen/linear_solver_eigen.h>
 #include <g2o/core/optimization_algorithm_levenberg.h>
-#include <g2o/solvers/csparse/linear_solver_csparse.h>
+//#include <g2o/solvers/csparse/linear_solver_csparse.h>
 
 // g2o edge
 class EdgeIMUCameraLocationPoseOnly : public g2o::BaseUnaryEdge<6, Eigen::Matrix<double,6,1>, g2o::VertexSE3Expmap>

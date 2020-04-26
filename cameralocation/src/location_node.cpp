@@ -54,8 +54,8 @@ int main(int argc, char **argv)
     //延时
     //sleep(5);
 
-    errorDataFile.open("/home/kk/myproject/ros-projrct/catkin_ws_robotLocation/src/robotlocation_myworld/LocationErrorData.txt",ios::out);
-    trackDataFile.open("/home/kk/myproject/ros-projrct/catkin_ws_robotLocation/src/robotlocation_myworld/LocationTrackData.txt",ios::out);
+    errorDataFile.open("LocationErrorData.txt",ios::out);
+    trackDataFile.open("LocationTrackData.txt",ios::out);
 
 
     //订阅消息

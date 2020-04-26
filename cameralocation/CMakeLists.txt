@@ -22,7 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package( G2O REQUIRED )
 find_package( OpenCV REQUIRED )
-find_package( CSparse REQUIRED )
+#find_package( CSparse REQUIRED )
 
 find_package(yaml-cpp REQUIRED)
 
@@ -139,29 +139,28 @@ include_directories(
   "include/"
   ${G2O_INCLUDE_DIRS}
   ${OpenCV_DIRS}
-  ${CSPARSE_INCLUDE_DIR}
+
 )
 
 
 add_executable(camera_node src/camera_node.cpp)
 add_library(cameradata src/cameradata.cpp)
 target_link_libraries(camera_node ${catkin_LIBRARIES} cameradata g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${OpenCV_LIBS} ${YAML_CPP_LIBRARIES})
-add_dependencies(camera_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(camera_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(imu_node src/imu_node.cpp)
 add_library(imuodom src/imuodom.cpp)
 target_link_libraries(imu_node ${catkin_LIBRARIES} imuodom g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${OpenCV_LIBS})
-add_dependencies(imu_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(imu_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(location_node src/location_node.cpp)
 add_library(location src/location.cpp)
 target_link_libraries(location_node ${catkin_LIBRARIES} location imuodom cameradata 
   g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension 
-  ${CSPARSE_LIBRARY}
   ${OpenCV_LIBS} 
   ${YAML_CPP_LIBRARIES}
 )
-add_dependencies(location_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(location_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
